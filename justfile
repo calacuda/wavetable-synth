@@ -1,24 +1,23 @@
-default:
+_:
   just -l
 
-check-desktop:
+check-all: _check-desktop _check-embeded
+  
+_check-desktop:
   cargo check -F desktop || echo "desktop failed"
 
-check-embeded:
+_check-embeded:
   cargo check --no-default-features -F embeded || echo "embeded check failed"
 
-
-check-all: check-desktop check-embeded
-  
-new-window NAME CMD:
+_new-window NAME CMD:
   tmux new-w -t wt-synth -n "{{NAME}}"
   tmux send-keys -t wt-synth:"{{NAME}}" "{{CMD}}" ENTER
 
 tmux:
   tmux new -ds wt-synth -n "README"
   tmux send-keys -t wt-synth:README 'nv ./README.md "+set wrap"' ENTER
-  @just new-window "Edit" ""
-  @just new-window "Run" ""
-  @just new-window "Git" "git status"
-  @just new-window "Misc" ""
+  @just _new-window "Edit" ""
+  @just _new-window "Run" ""
+  @just _new-window "Git" "git status"
+  @just _new-window "Misc" ""
   tmux a -t wt-synth
