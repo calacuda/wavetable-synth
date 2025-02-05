@@ -28,20 +28,8 @@ pub enum Knob {
 /// one per voice
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct DataTable {
-    // osc_1: f32,
-    // osc_2: f32,
-    // osc_3: f32,
     pub osc: [f32; 3],
-    // env_1: f32,
-    // env_2: f32,
-    // env_3: f32,
-    // env_4: f32,
-    // env_5: f32,
     pub env: [f32; 5],
-    // pub lfo_1: f32,
-    // pub lfo_2: f32,
-    // pub lfo_3: f32,
-    // pub lfo_4: f32,
     pub lfos: [f32; 4],
     pub filter_1: f32,
     pub filter_2: f32,
@@ -58,14 +46,9 @@ pub struct DataTable {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ModMatrixSrc {
     Velocity,
-    Env1,
-    Env2,
-    Env3,
-    Env4,
-    Lfo1,
-    Lfo2,
-    Lfo3,
-    Lfo4,
+    Env(Env),
+    Lfo(Lfo),
+    Gate,
     Macro1,
     Macro2,
     Macro3,
@@ -74,47 +57,84 @@ pub enum ModMatrixSrc {
     PitchWheel,
 }
 
-// TODO: make ModMatrixDest an enum that holds other enums
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum Osc {
+    Osc1,
+    Osc2,
+    Osc3,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum OscParam {
+    Level,
+    Tune,
+    Pan,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum Env {
+    Env1,
+    Env2,
+    Env3,
+    Env4,
+    Env5,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum EnvParam {
+    Atk,
+    Dcy,
+    Sus,
+    Rel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum Lfo {
+    Lfo1,
+    Lfo2,
+    Lfo3,
+    Lfo4,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum LfoParam {
+    Speed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum LowPass {
+    LP1,
+    LP2,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum LowPassParam {
+    Cutoff,
+    Res,
+    Mix,
+    KeyTrack,
+    Drive,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ModMatrixDest {
     ModMatrixEntryModAmt(usize),
-    Osc1Level,
-    Osc2Level,
-    Osc3Level,
-    Osc1Tune,
-    Osc2Tune,
-    Osc3Tune,
-    Env1Atk,
-    Env2Atk,
-    Env3Atk,
-    Env4Atk,
-    Env1Decay,
-    Env2Decay,
-    Env3Decay,
-    Env4Decay,
-    Env1Sus,
-    Env2Sus,
-    Env3Sus,
-    Env4Sus,
-    Env1Rel,
-    Env2Rel,
-    Env3Rel,
-    Env4Rel,
-    Lfo1Speed,
-    Lfo2Speed,
-    Lfo3Speed,
-    Lfo4Speed,
-    LowPass1Cutoff,
-    LowPass2Cutoff,
-    LowPass1Res,
-    LowPass2Res,
-    LowPass1Mix,
-    LowPass2Mix,
-    LowPass1Keytrack,
-    LowPass2Keytrack,
-    LowPass1Drive,
-    LowPass2Drive,
+    Osc {
+        osc: Osc,
+        param: OscParam,
+    },
+    Env {
+        env: Env,
+        param: EnvParam,
+    },
+    Lfo {
+        lfo: Lfo,
+        param: LfoParam,
+    },
+    LowPass {
+        low_pass: LowPass,
+        param: LowPassParam,
+    },
     SynthVolume,
 }
 

@@ -93,20 +93,6 @@ pub trait KnobCtrl {
     fn gui_param_8(&mut self, value: f32) -> bool {
         false
     }
-
-    // fn get_lfo_input(&mut self) -> &mut LfoInput;
-    //
-    // fn lfo_connect(&mut self, param: Param) {
-    //     self.get_lfo_input().target = Some(param);
-    // }
-    //
-    // fn lfo_disconnect(&mut self) {
-    //     self.get_lfo_input().target = None;
-    // }
-    //
-    // fn lfo_control(&mut self, lfo_sample: f32) {
-    //     self.get_lfo_input().sample = lfo_sample;
-    // }
 }
 
 #[derive(Debug)]
@@ -142,7 +128,7 @@ impl SampleGen for App {
 
         // TODO: add an AllPass filter
 
-        (sample * 0.75 * self.level).tanh()
+        (sample * 0.85 * self.level).tanh()
     }
 }
 
