@@ -39,62 +39,63 @@ pub trait SampleGen {
     fn get_sample(&mut self) -> f32;
 }
 
-#[allow(unused_variables)]
-#[enum_dispatch(EffectsModule, SynthModule)]
-pub trait KnobCtrl {
-    // parameters edited by the MIDI controllers built in knobs
-    fn knob_1(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_2(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_3(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_4(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_5(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_6(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_7(&mut self, value: f32) -> bool {
-        false
-    }
-    fn knob_8(&mut self, value: f32) -> bool {
-        false
-    }
+// #[allow(unused_variables)]
+// #[enum_dispatch(EffectsModule, SynthModule)]
+// pub trait KnobCtrl {
+//     // parameters edited by the MIDI controllers built in knobs
+//     fn knob_1(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_2(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_3(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_4(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_5(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_6(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_7(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn knob_8(&mut self, value: f32) -> bool {
+//         false
+//     }
+//
+//     // the parameters edited by the GUI
+//     fn gui_param_1(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_2(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_3(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_4(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_5(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_6(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_7(&mut self, value: f32) -> bool {
+//         false
+//     }
+//     fn gui_param_8(&mut self, value: f32) -> bool {
+//         false
+//     }
+// }
 
-    // the parameters edited by the GUI
-    fn gui_param_1(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_2(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_3(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_4(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_5(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_6(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_7(&mut self, value: f32) -> bool {
-        false
-    }
-    fn gui_param_8(&mut self, value: f32) -> bool {
-        false
-    }
-}
-
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct App {
     /// join handle for the run_midi thread
@@ -111,6 +112,7 @@ pub struct App {
     voices: [Voice; POLYPHONY],
 }
 
+#[allow(unused_variables)]
 impl MidiControlled for App {
     fn midi_input(&mut self, message: &MidiMessage) {
         // TODO: if note, add midi note to the data table

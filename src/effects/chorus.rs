@@ -1,5 +1,5 @@
 use super::{Effect, EffectParam};
-use crate::{config::SAMPLE_RATE, HashMap, KnobCtrl, SampleGen};
+use crate::{config::SAMPLE_RATE, HashMap, SampleGen};
 use std::fmt::Display;
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -101,7 +101,7 @@ impl SampleGen for Chorus {
     }
 }
 
-impl KnobCtrl for Chorus {}
+// impl KnobCtrl for Chorus {}
 
 impl Effect for Chorus {
     fn take_input(&mut self, value: f32) {

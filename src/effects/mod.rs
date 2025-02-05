@@ -1,4 +1,4 @@
-use crate::{HashMap, KnobCtrl, SampleGen};
+use crate::{HashMap, SampleGen};
 use chorus::Chorus;
 use enum_dispatch::enum_dispatch;
 use reverb::Reverb;
@@ -40,7 +40,7 @@ pub mod reverb;
 pub trait EffectParam: Debug + Clone + Display + TryFrom<f32> {}
 
 #[enum_dispatch(EffectsModule)]
-pub trait Effect: Debug + SampleGen + Send + KnobCtrl {
+pub trait Effect: Debug + SampleGen + Send {
     // type Param: EffectParam;
 
     fn take_input(&mut self, value: f32);

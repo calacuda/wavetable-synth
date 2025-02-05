@@ -1,5 +1,5 @@
 use super::{Effect, EffectParam};
-use crate::{HashMap, KnobCtrl, SampleGen};
+use crate::{HashMap, SampleGen};
 use reverb;
 use std::{fmt::Display, str::FromStr};
 use strum::{EnumIter, IntoEnumIterator};
@@ -130,35 +130,35 @@ impl SampleGen for Reverb {
     }
 }
 
-impl KnobCtrl for Reverb {
-    fn knob_1(&mut self, value: f32) -> bool {
-        // info!("setting gain");
-        self.set_gain(value);
-
-        true
-    }
-
-    fn knob_2(&mut self, value: f32) -> bool {
-        // info!("setting decay");
-        self.set_decay(value);
-
-        true
-    }
-
-    fn knob_3(&mut self, value: f32) -> bool {
-        // info!("setting Damping");
-        self.set_damping(value);
-
-        true
-    }
-
-    fn knob_4(&mut self, value: f32) -> bool {
-        // info!("setting cutoff");
-        self.set_cutoff(value);
-
-        true
-    }
-}
+// impl KnobCtrl for Reverb {
+//     fn knob_1(&mut self, value: f32) -> bool {
+//         // info!("setting gain");
+//         self.set_gain(value);
+//
+//         true
+//     }
+//
+//     fn knob_2(&mut self, value: f32) -> bool {
+//         // info!("setting decay");
+//         self.set_decay(value);
+//
+//         true
+//     }
+//
+//     fn knob_3(&mut self, value: f32) -> bool {
+//         // info!("setting Damping");
+//         self.set_damping(value);
+//
+//         true
+//     }
+//
+//     fn knob_4(&mut self, value: f32) -> bool {
+//         // info!("setting cutoff");
+//         self.set_cutoff(value);
+//
+//         true
+//     }
+// }
 
 impl Effect for Reverb {
     // type Param = ReverbParam;
