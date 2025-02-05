@@ -148,7 +148,6 @@ impl SampleGen for App {
 
 pub fn midi_to_freq(midi_note: i16) -> f32 {
     let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
-    // 2_f32.powf(exp)
 
     2.0_f32.powf(exp)
 }

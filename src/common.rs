@@ -25,40 +25,7 @@ pub enum Knob {
     Eight,
 }
 
-// #[derive(
-//     Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Hash, EnumIter, Serialize, Deserialize,
-// )]
-// pub enum SynthEngineType {
-//     SubSynth,
-//     B3Organ,
-//     Wurlitzer,
-//     // DrumSynth,
-//     // SamplerSynth,
-//     // WaveTableSynth,
-// }
-//
-// impl Into<usize> for SynthEngineType {
-//     fn into(self) -> usize {
-//         match self {
-//             Self::B3Organ => 0,
-//             Self::SubSynth => 1,
-//             Self::Wurlitzer => 2,
-//         }
-//     }
-// }
-//
-// impl Display for SynthEngineType {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Self::SubSynth => write!(f, "Subtract"),
-//             Self::B3Organ => write!(f, "Organ"),
-//             Self::Wurlitzer => write!(f, "Wurlitzer"),
-//             // Self::SamplerSynth => write!(f, "Sampler"),
-//             // Self::WaveTableSynth => write!(f, "WaveTbl"),
-//         }
-//     }
-// }
-
+/// one per voice
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct DataTable {
     // osc_1: f32,
@@ -69,6 +36,7 @@ pub struct DataTable {
     // env_2: f32,
     // env_3: f32,
     // env_4: f32,
+    // env_5: f32,
     pub env: [f32; 5],
     // pub lfo_1: f32,
     // pub lfo_2: f32,
