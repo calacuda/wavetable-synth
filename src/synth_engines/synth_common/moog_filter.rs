@@ -1,4 +1,4 @@
-use crate::SAMPLE_RATE;
+use crate::config::SAMPLE_RATE;
 // use num_traits::clamp;
 use std::f32::consts::PI;
 

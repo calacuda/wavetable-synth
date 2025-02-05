@@ -1,6 +1,15 @@
 default:
   just -l
 
+check-desktop:
+  cargo check -F desktop || echo "desktop failed"
+
+check-embeded:
+  cargo check --no-default-features -F embeded || echo "embeded check failed"
+
+
+check-all: check-desktop check-embeded
+  
 new-window NAME CMD:
   tmux new-w -t wt-synth -n "{{NAME}}"
   tmux send-keys -t wt-synth:"{{NAME}}" "{{CMD}}" ENTER

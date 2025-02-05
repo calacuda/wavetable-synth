@@ -5,15 +5,15 @@ use crate::{
     midi_to_freq,
     synth_engines::{
         synth::osc::{OscTarget, Oscillator},
-        synth_common::{env::ADSR, moog_filter::LowPass, WaveTable},
+        synth_common::{env::ADSR, moog_filter::LowPass},
     },
-    ModMatrix, SampleGen,
+    ModMatrix, SampleGen, WaveTable,
 };
 use std::ops::Deref;
 
 #[derive(Clone, Debug)]
 pub struct Voice {
-    /// Oscilators
+    /// Oscilators holds the osc and if its playing
     oscs: [(Oscillator, bool); 3],
     /// env filters
     envs: [ADSR; 5],

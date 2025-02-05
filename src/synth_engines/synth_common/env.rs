@@ -1,4 +1,4 @@
-use crate::SAMPLE_RATE;
+use crate::config::SAMPLE_RATE;
 // use log::*;
 
 pub static UNPRESSED: usize = 0;

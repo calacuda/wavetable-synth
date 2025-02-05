@@ -1,8 +1,6 @@
 use midi_control::MidiNote;
 use serde::{Deserialize, Serialize};
 
-pub const POLYPHONY: usize = 8;
-
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Serialize, Deserialize)]
 pub enum GuiParam {
     A,

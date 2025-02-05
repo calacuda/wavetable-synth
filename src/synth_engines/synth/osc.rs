@@ -1,8 +1,6 @@
 use crate::{
-    common::POLYPHONY,
-    midi_to_freq,
-    synth_engines::synth_common::{WaveTable, WAVE_TABLE_SIZE},
-    SAMPLE_RATE,
+    config::{SAMPLE_RATE, WAVE_TABLE_SIZE},
+    midi_to_freq, SampleGen, WaveTable,
 };
 
 pub const N_OVERTONES: usize = 32;
@@ -64,47 +62,61 @@ impl WavetableOscillator {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct NoteOscillator {
+#[derive(Clone, Debug)]
+pub struct Oscillator {
     osc: WavetableOscillator,
     frequency: f32,
     base_frequency: f32,
+    level: f32,
+    // pan: f32,
+    detune: f32,
+    offset: i16,
+    pub target: OscTarget,
+    pub wave_table: WaveTable,
 }
 
-impl NoteOscillator {
-    pub fn new() -> Self {
+impl Oscillator {
+    pub fn new(wave_table: WaveTable) -> Self {
         Self {
             osc: WavetableOscillator::new(),
-            // wave_table,
             frequency: 0.0,
             base_frequency: 0.0,
+            level: 0.75,
+            detune: 0.0,
+            offset: 0,
+            target: OscTarget::Filter1,
+            wave_table,
         }
     }
 
-    pub fn press(&mut self, midi_note: i16) {
-        // self.env_filter.press();
-        self.frequency = midi_to_freq(midi_note);
+    pub fn press(&mut self, midi_note: u8) {
+        let note = midi_note as i16 + self.offset;
+
+        self.frequency = midi_to_freq(note);
         self.base_frequency = self.frequency;
 
         self.osc.set_frequency(self.frequency);
-        // self.low_pass.set_note(self.frequency);
-        // self.playing = Some(midi_note);
     }
 
-    pub fn release(&mut self) {
-        // self.env_filter.release();
+    pub fn release(&mut self) {}
+
+    pub fn get_sample(&mut self) -> f32 {
+        // if self.tune != 0.0 {
+        // self.detune(tune)
+        // }
+        self.detune();
+
+        self.osc.get_sample(&self.wave_table) * self.level
     }
 
-    pub fn get_sample(&mut self, wave_table: &WaveTable, tune: f32) -> f32 {
-        if tune != 0.0 {
-            self.detune(tune)
-        }
-
-        self.osc.get_sample(wave_table)
-    }
-
-    pub fn detune(&mut self, amt: f32) {
+    pub fn detune(&mut self) {
         // println!("bending");
+        let amt = if self.detune != 0.0 {
+            self.detune
+        } else {
+            return;
+        };
+
         let nudge = 2.0_f32.powf(amt / 12.0);
         let new_freq = if amt < 0.0 {
             self.frequency / nudge
@@ -144,189 +156,59 @@ impl NoteOscillator {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Oscillator {
-    notes: [Option<f32>; POLYPHONY],
-    osc_s: [NoteOscillator; POLYPHONY],
-    level: f32,
-    // pan: f32,
-    detune: f32,
-    offset: i16,
-    pub target: OscTarget,
-    pub wave_table: WaveTable,
-}
-
-impl Oscillator {
-    pub fn new(wave_table: WaveTable) -> Self {
-        Self {
-            notes: [None; POLYPHONY],
-            osc_s: [NoteOscillator::new(); POLYPHONY],
-            level: 0.75, // wave_table,
-            detune: 0.0,
-            offset: 0,
-            target: OscTarget::Filter1,
-            wave_table,
-        }
-    }
-
-    pub fn press(&mut self, midi_note: u8) {
-        // self.frequency = Self::get_freq(midi_note);
-
-        for (note, osc) in self.notes.iter().zip(self.osc_s.iter_mut()) {
-            if note.is_none() {
-                osc.press(midi_note as i16 + self.offset);
-            }
-        }
-    }
-
-    pub fn release(&mut self) {
-        // self.env_filter.release();
-    }
-
-    pub fn get_sample(&mut self) -> f32 {
-        let mut sample = 0.0;
-
-        for (note, osc) in self.notes.iter().zip(self.osc_s.iter_mut()) {
-            if note.is_some() {
-                sample += osc.get_sample(&self.wave_table, self.detune);
-            }
-        }
-
-        sample * self.level
-    }
-
-    pub fn bend(&mut self, bend: f32) {
-        for (note, osc) in self.notes.iter().zip(self.osc_s.iter_mut()) {
-            if note.is_some() {
-                osc.bend(bend);
-            }
-        }
-    }
-
-    pub fn unbend(&mut self) {
-        for (note, osc) in self.notes.iter().zip(self.osc_s.iter_mut()) {
-            if note.is_some() {
-                osc.unbend();
-            }
-        }
+impl SampleGen for Oscillator {
+    fn get_sample(&mut self) -> f32 {
+        self.get_sample()
     }
 }
 
-// impl SampleGen for WavetableOscillator {
-//     fn get_sample(&mut self) -> f32 {
-//         self.get_sample()
-//     }
-// }
-
-// impl SynthOscilatorBackend for WavetableOscillator {
-//     fn set_frequency(&mut self, frequency: f32) {
-//         self.set_frequency(frequency)
-//     }
-//
-//     fn sync_reset(&mut self) {
-//         if self.index > WAVE_TABLE_SIZE as f32 * (5.0 / 12.0)
-//         // && self.wave_table[self.index as usize] != 0.0
-//         {
-//             // warn!("reset wave_table");
-//             self.index = 0.0;
-//             self.direction = !self.direction;
-//         }
-//     }
-// }
-
-// #[derive(Debug, Clone)]
-// pub struct SynthOscillator {
-//     osc: SynthBackend,
-//     pub env_filter: ADSR,
-//     /// what midi note is being played by this osc
-//     pub playing: Option<u8>,
-//     frequency: f32,
-//     base_frequency: f32,
-//     // note_space: f32,
-//     pub low_pass: LowPass,
-//     // pub wave_table: WaveTable,
+// #[derive(Clone, Debug)]
+// pub struct NoteOscillator {
+//     // notes: [Option<f32>; POLYPHONY],
+//     osc_s: [Oscillator; POLYPHONY],
 // }
 //
-// impl SynthOscillator {
-//     pub fn new() -> Self {
+// impl NoteOscillator {
+//     pub fn new(wave_table: WaveTable) -> Self {
 //         Self {
-//             // osc: SynthBackend::Sin(WavetableOscillator::new()),
-//             osc: SynthBackend::Saw(SawToothOsc::new()),
-//             env_filter: ADSR::new(),
-//             playing: None,
-//             frequency: 0.0,
-//             base_frequency: 0.0,
-//             // note_space: 2.0_f32.powf(1.0 / 12.0),
-//             low_pass: LowPass::new(),
+//             // notes: [None; POLYPHONY],
+//             osc_s: [Oscillator::new(); POLYPHONY],
 //         }
-//     }
-//
-//     pub fn sync_reset(&mut self) {
-//         self.osc.sync_reset()
-//     }
-//
-//     pub fn set_osc_type(&mut self, osc_type: OscType) {
-//         self.osc = osc_type.into();
-//     }
-//
-//     pub fn is_pressed(&self) -> bool {
-//         self.env_filter.pressed()
 //     }
 //
 //     pub fn press(&mut self, midi_note: u8) {
-//         self.env_filter.press();
-//         self.frequency = Self::get_freq(midi_note);
-//         self.base_frequency = self.frequency;
-//
-//         self.osc.set_frequency(self.frequency);
-//         self.low_pass.set_note(self.frequency);
-//         self.playing = Some(midi_note);
+//         for osc in self.osc_s.iter_mut() {
+//             osc.press(midi_note as i16 + self.offset);
+//         }
 //     }
 //
-//     fn get_freq(midi_note: u8) -> f32 {
-//         let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
-//         // 2_f32.powf(exp)
-//
-//         2.0_f32.powf(exp)
-//     }
-//
-//     pub fn release(&mut self) {
-//         self.env_filter.release();
-//         // self.playing = None;
-//     }
+//     pub fn release(&mut self) {}
 //
 //     pub fn get_sample(&mut self) -> f32 {
-//         let env = self.env_filter.get_samnple();
-//         let sample = self.osc.get_sample() * env;
+//         let mut sample = 0.0;
 //
-//         if env <= 0.0 {
-//             self.playing = None;
+//         for osc in self.osc_s.iter_mut() {
+//             sample += osc.get_sample(&self.wave_table, self.detune);
 //         }
-//         // println!("osc sample => {sample}");
 //
-//         self.low_pass.get_sample(sample, env)
+//         sample * self.level
 //     }
 //
 //     pub fn bend(&mut self, bend: f32) {
-//         // println!("bending");
-//         let nudge = 2.0_f32.powf((bend * 3.0).abs() / 12.0);
-//         let new_freq = if bend < 0.0 {
-//             self.base_frequency / nudge
-//         } else if bend > 0.0 {
-//             self.base_frequency * nudge
-//         } else {
-//             self.base_frequency
-//         };
-//         // + self.frequency;
-//         self.osc.set_frequency(new_freq);
-//         // println!("frequency => {}", self.frequency);
-//         // println!("new_freq => {}", new_freq);
-//         self.frequency = new_freq;
+//         for osc in self.osc_s.iter_mut() {
+//             osc.bend(bend);
+//         }
 //     }
 //
 //     pub fn unbend(&mut self) {
-//         // println!("unbend => {}", self.base_frequency);
-//         self.osc.set_frequency(self.base_frequency);
-//         self.frequency = self.base_frequency;
+//         for osc in self.osc_s.iter_mut() {
+//             osc.unbend();
+//         }
+//     }
+// }
+
+// impl SampleGen for NoteOscillator {
+//     fn get_sample(&mut self) -> f32 {
+//         self.get_sample()
 //     }
 // }

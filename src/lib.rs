@@ -2,7 +2,8 @@
 use anyhow::Result;
 use common::ModMatrixDest;
 use common::ModMatrixItem;
-use common::POLYPHONY;
+// use common::POLYPHONY;
+use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
 use fern::colors::{Color, ColoredLevelConfig};
@@ -17,14 +18,15 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use voice::Voice;
+// use config::
 
 pub type HashMap<Key, Val> = FxHashMap<Key, Val>;
 pub type HashSet<T> = FxHashSet<T>;
 pub type ModMatrix = [Option<ModMatrixItem>; 256];
-
-pub const SAMPLE_RATE: u32 = 48_000;
+pub type WaveTable = Arc<[f32]>;
 
 pub mod common;
+pub mod config;
 pub mod effects;
 pub mod lfo;
 pub mod synth_engines;

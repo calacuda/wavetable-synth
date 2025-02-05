@@ -1,26 +1,24 @@
 use crate::{
-    synth_engines::synth_common::{WaveTable, WAVE_TABLE_SIZE},
-    SampleGen, SAMPLE_RATE,
+    config::{SAMPLE_RATE, WAVE_TABLE_SIZE},
+    SampleGen, WaveTable,
 };
 
 /// the WaveTable oscilator that is used for generating LFO samples
 #[derive(Clone, Debug)]
-struct LfoWaveTableOSc {
+pub struct LfoWaveTableOsc {
     sample_rate: f32,
     index: f32,
     index_increment: f32,
-    direction: bool,
     wave_table_len: f32,
     freq: f32,
 }
 
-impl LfoWaveTableOSc {
+impl LfoWaveTableOsc {
     pub fn new() -> Self {
         Self {
             sample_rate: SAMPLE_RATE as f32,
             index: 0.0,
             index_increment: 0.0,
-            direction: true,
             wave_table_len: WAVE_TABLE_SIZE as f32,
             freq: 2.0,
         }
@@ -29,7 +27,6 @@ impl LfoWaveTableOSc {
     pub fn set_frequency(&mut self, frequency: f32) {
         self.freq = frequency;
         self.calc_index_inc();
-        // self.index = 0.0;
     }
 
     fn calc_index_inc(&mut self) {
@@ -39,6 +36,7 @@ impl LfoWaveTableOSc {
     pub fn set_wave_table_size(&mut self, size: usize) {
         self.wave_table_len = size as f32;
         self.calc_index_inc();
+        self.index = 0.0;
     }
 
     pub fn get_sample(&mut self, wave_table: &[f32]) -> f32 {
@@ -69,9 +67,11 @@ impl LfoWaveTableOSc {
 /// the actual LFO struct
 #[derive(Clone, Debug)]
 pub struct LFO {
+    /// can be modulated by envelopes, lfos, velocity, etc
     freq: f32,
     wave_table: WaveTable,
-    pub osc: LfoWaveTableOSc,
+    pub osc: LfoWaveTableOsc,
+    playing: bool,
 }
 
 impl LFO {
@@ -81,12 +81,22 @@ impl LFO {
         Self {
             freq: 2.0,
             wave_table,
-            osc: LfoWaveTableOSc::new(),
+            osc: LfoWaveTableOsc::new(),
+            playing: false,
         }
     }
 
     pub fn get_sample(&mut self) -> f32 {
-        self.osc.get_sample(&self.wave_table)
+        if self.playing {
+            self.osc.get_sample(&self.wave_table)
+        } else {
+            0.0
+        }
+    }
+
+    pub fn set_frequency(&mut self, frequency: f32) {
+        self.freq = frequency;
+        self.osc.set_frequency(frequency);
     }
 
     pub fn set_wave_table(&mut self, wave_table: WaveTable) {
@@ -97,6 +107,11 @@ impl LFO {
     pub fn press(&mut self) {
         self.osc.press();
         self.osc.index = 0.0;
+        self.playing = true;
+    }
+
+    pub fn release(&mut self) {
+        self.playing = false;
     }
 }
 
