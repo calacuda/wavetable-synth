@@ -1,36 +1,13 @@
+use crate::config::{N_ENV, N_LFO, N_OSC};
 use midi_control::MidiNote;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Serialize, Deserialize)]
-pub enum GuiParam {
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
-    H,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Serialize, Deserialize)]
-pub enum Knob {
-    One,
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-}
 
 /// one per voice
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct DataTable {
-    pub osc: [f32; 3],
-    pub env: [f32; 5],
-    pub lfos: [f32; 4],
+    pub osc: [f32; N_OSC],
+    pub env: [f32; N_ENV],
+    pub lfos: [f32; N_LFO],
     pub filter_1: f32,
     pub filter_2: f32,
     pub chorus: f32,
@@ -46,8 +23,8 @@ pub struct DataTable {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ModMatrixSrc {
     Velocity,
-    Env(Env),
-    Lfo(Lfo),
+    Env(usize),
+    Lfo(usize),
     Gate,
     Macro1,
     Macro2,
@@ -57,12 +34,12 @@ pub enum ModMatrixSrc {
     PitchWheel,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum Osc {
-    Osc1,
-    Osc2,
-    Osc3,
-}
+// #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+// pub enum Osc {
+//     Osc1,
+//     Osc2,
+//     Osc3,
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum OscParam {
@@ -71,14 +48,14 @@ pub enum OscParam {
     Pan,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum Env {
-    Env1,
-    Env2,
-    Env3,
-    Env4,
-    Env5,
-}
+// #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+// pub enum Env {
+//     Env1,
+//     Env2,
+//     Env3,
+//     Env4,
+//     Env5,
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum EnvParam {
@@ -88,13 +65,13 @@ pub enum EnvParam {
     Rel,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum Lfo {
-    Lfo1,
-    Lfo2,
-    Lfo3,
-    Lfo4,
-}
+// #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+// pub enum Lfo {
+//     Lfo1,
+//     Lfo2,
+//     Lfo3,
+//     Lfo4,
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum LfoParam {
@@ -120,15 +97,15 @@ pub enum LowPassParam {
 pub enum ModMatrixDest {
     ModMatrixEntryModAmt(usize),
     Osc {
-        osc: Osc,
+        osc: usize,
         param: OscParam,
     },
     Env {
-        env: Env,
+        env: usize,
         param: EnvParam,
     },
     Lfo {
-        lfo: Lfo,
+        lfo: usize,
         param: LfoParam,
     },
     LowPass {

@@ -1,5 +1,6 @@
 use crate::{
     common::DataTable,
+    config::{N_ENV, N_LFO, N_OSC},
     effects::{chorus::Chorus, reverb::Reverb, Effect, EffectsModule},
     lfo::LFO,
     midi_to_freq,
@@ -14,11 +15,11 @@ use std::ops::Deref;
 #[derive(Clone, Debug)]
 pub struct Voice {
     /// Oscilators holds the osc and if its playing
-    oscs: [(Oscillator, bool); 3],
+    oscs: [(Oscillator, bool); N_OSC],
     /// env filters
-    envs: [ADSR; 5],
+    envs: [ADSR; N_ENV],
     /// LFOs
-    lfos: [LFO; 4],
+    lfos: [LFO; N_LFO],
     /// filters
     filters: [LowPass; 2],
     /// what notes this voice is playing

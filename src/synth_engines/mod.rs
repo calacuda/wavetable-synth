@@ -1,21 +1,21 @@
-use crate::{
-    common::{
-        GuiParam,
-        Knob,
-        // SynthEngineType
-    },
-    // effects::{Effect, EffectsModule},
-    HashMap,
-    KnobCtrl,
-    // MidiControlled,
-    SampleGen,
-};
-use enum_dispatch::enum_dispatch;
+// use crate::{
+//     // common::{
+//     //     GuiParam,
+//     //     Knob,
+//     //     // SynthEngineType
+//     // },
+//     // effects::{Effect, EffectsModule},
+//     HashMap,
+//     KnobCtrl,
+//     // MidiControlled,
+//     SampleGen,
+// };
+// use enum_dispatch::enum_dispatch;
 // use log::*;
-use midi_control::MidiNote;
+// use midi_control::MidiNote;
 // use midi_control::{ControlEvent, KeyEvent, MidiMessage};
 // use organ::organ::Organ;
-use std::fmt::Debug;
+// use std::fmt::Debug;
 // use strum::IntoEnumIterator;
 // use synth_common::lfo::LFO;
 // use wurlitzer::WurlitzerEngine;
@@ -25,28 +25,28 @@ pub mod synth;
 pub mod synth_common;
 // pub mod wurlitzer;
 
-#[enum_dispatch]
-pub trait SynthEngine: Debug + SampleGen + KnobCtrl + Send + Clone {
-    fn name(&self) -> String;
-
-    fn play(&mut self, note: MidiNote, velocity: u8);
-    fn stop(&mut self, note: MidiNote);
-    fn bend(&mut self, amount: f32);
-    fn unbend(&mut self) {
-        self.bend(0.0);
-    }
-    fn volume_swell(&mut self, amount: f32) -> bool;
-    fn get_params(&self) -> HashMap<Knob, f32>;
-    fn get_gui_params(&self) -> HashMap<GuiParam, f32>;
-    // TODO: impl sustain_peddal
-    // fn sustain_peddal(&mut self);
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum Param {
-    Knob(Knob),
-    Gui(GuiParam),
-}
+// #[enum_dispatch]
+// pub trait SynthEngine: Debug + SampleGen + KnobCtrl + Send + Clone {
+//     fn name(&self) -> String;
+//
+//     fn play(&mut self, note: MidiNote, velocity: u8);
+//     fn stop(&mut self, note: MidiNote);
+//     fn bend(&mut self, amount: f32);
+//     fn unbend(&mut self) {
+//         self.bend(0.0);
+//     }
+//     fn volume_swell(&mut self, amount: f32) -> bool;
+//     fn get_params(&self) -> HashMap<Knob, f32>;
+//     fn get_gui_params(&self) -> HashMap<GuiParam, f32>;
+//     // TODO: impl sustain_peddal
+//     // fn sustain_peddal(&mut self);
+// }
+//
+// #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+// pub enum Param {
+//     Knob(Knob),
+//     Gui(GuiParam),
+// }
 
 // #[enum_dispatch(SynthEngine)]
 // #[derive(Debug, Clone)]
