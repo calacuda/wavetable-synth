@@ -2,7 +2,6 @@
 use anyhow::Result;
 use common::ModMatrixDest;
 use common::ModMatrixItem;
-// use common::POLYPHONY;
 use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
@@ -18,7 +17,6 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use voice::Voice;
-// use config::
 
 pub type HashMap<Key, Val> = FxHashMap<Key, Val>;
 pub type HashSet<T> = FxHashSet<T>;
@@ -148,19 +146,6 @@ impl SampleGen for App {
     }
 }
 
-// pub struct Player {
-//     pub synth: Arc<Mutex<Synth>>,
-// }
-//
-// impl Iterator for Player {
-//     type Item = f32;
-//
-//     fn next(&mut self) -> Option<Self::Item> {
-//         let sample = self.synth.lock().expect("couldn't lock synth").get_sample();
-//         Some(sample)
-//     }
-// }
-
 pub fn midi_to_freq(midi_note: i16) -> f32 {
     let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
     // 2_f32.powf(exp)
@@ -168,12 +153,7 @@ pub fn midi_to_freq(midi_note: i16) -> f32 {
     2.0_f32.powf(exp)
 }
 
-pub fn run_midi(
-    synth: Arc<Mutex<App>>,
-    // updated: Arc<Mutex<bool>>,
-    exit: Arc<AtomicBool>,
-    // effect_midi: Arc<AtomicBool>,
-) -> Result<()> {
+pub fn run_midi(synth: Arc<Mutex<App>>, exit: Arc<AtomicBool>) -> Result<()> {
     let mut registered_ports = HashMap::default();
 
     while !exit.load(Ordering::Relaxed) {
@@ -201,9 +181,6 @@ pub fn run_midi(
             let mut midi_in = MidiInput::new("midir reading input")?;
             midi_in.ignore(Ignore::None);
             let synth = synth.clone();
-            // let tx = tx.clone();
-            // let updated = updated.clone();
-            // let effect = effect_midi.clone();
 
             registered_ports.insert(
                 port_name,
@@ -212,14 +189,9 @@ pub fn run_midi(
                     "midir-read-input",
                     move |_stamp, message, _| {
                         let message = MidiMessage::from(message);
-                        // let send = || {
-                        //     let mut u = updated.lock().unwrap();
-                        //     *u = true;
-                        // };
 
                         // do midi stuff
                         synth.lock().unwrap().midi_input(&message);
-                        // send();
                     },
                     (),
                 ),
@@ -247,8 +219,8 @@ pub fn logger_init() -> Result<()> {
                 message
             ))
         })
-        // .chain(fern::log_file("stepper-synth.log")?)
-        // .filter(|metadata| metadata..starts_with("stepper"))
+        // .chain(fern::log_file("wavetable-synth.log")?)
+        // .filter(|metadata| metadata..starts_with("wavetable"))
         .chain(std::io::stderr())
         .apply()?;
 
@@ -261,8 +233,8 @@ pub fn logger_init() -> Result<()> {
                 message
             ))
         })
-        // .chain(fern::log_file("stepper-synth.log")?)
-        // .filter(|metadata| metadata.target().starts_with("stepper"))
+        // .chain(fern::log_file("wavetable-synth.log")?)
+        // .filter(|metadata| metadata.target().starts_with("wavetable"))
         .chain(std::io::stderr())
         .apply()?;
 
