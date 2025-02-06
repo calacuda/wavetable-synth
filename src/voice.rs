@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::{
     calculate_modulation,
     common::{DataTable, LowPass as LP, ModMatrixDest},
@@ -24,7 +26,7 @@ pub struct Voice {
     /// filters
     filters: [LowPass; 2],
     /// what notes this voice is playing
-    playing: Option<u8>,
+    pub playing: Option<u8>,
     /// effects, holds the effect and if its one or not
     effects: [(EffectsModule, bool); 2],
     /// holds the out put of the different modules and also other needed data (velocity, and note).
@@ -65,7 +67,7 @@ impl Voice {
         }
     }
 
-    pub fn press(&mut self, midi_note: u8) {
+    pub fn press(&mut self, midi_note: u8, velocity: u8) {
         self.oscs.iter_mut().for_each(|osc| {
             if osc.1 {
                 osc.0.press(midi_note)
@@ -79,6 +81,8 @@ impl Voice {
         });
         self.lfos.iter_mut().for_each(|lfo| lfo.press());
         self.playing = Some(midi_note);
+        self.data_table.velocity = Some(velocity);
+        self.data_table.note = Some(midi_note);
     }
 
     pub fn release(&mut self) {
@@ -167,13 +171,13 @@ impl Voice {
         // calculate envs
         for (i, env) in self.envs.iter_mut().enumerate() {
             let sample = env.get_samnple();
-            self.data_table.env[i] += sample;
+            self.data_table.env[i] = sample;
         }
 
         // calculate lfos
         for (i, lfo) in self.lfos.iter_mut().enumerate() {
             let sample = lfo.get_sample();
-            self.data_table.lfos[i] += sample;
+            self.data_table.lfos[i] = sample;
         }
 
         if !self.envs[0].pressed() && self.data_table.env[0] <= 0.0 {
@@ -215,26 +219,33 @@ impl Voice {
             }
         }
 
-        let mut effects_sample = None;
+        let mut effects_sample = osc_sample;
 
         for (effect, on) in self.effects.iter_mut() {
             // if let Some((effect, on)) = effect {
             if *on {
-                let s = if let Some(sample) = effects_sample {
-                    sample
-                } else {
-                    osc_sample
-                };
+                // let s = if let Some(sample) = effects_sample {
+                //     sample
+                // } else {
+                //     osc_sample
+                // };
 
-                effect.take_input(s);
+                effect.take_input(effects_sample);
 
-                effects_sample = Some(effect.get_sample());
+                effects_sample += effect.get_sample();
             }
         }
 
-        if let Some(sample) = effects_sample {
-            output += sample;
-        }
+        // if let Some(sample) = effects_sample {
+        //     output += sample;
+        // }
+        output += effects_sample;
+        // info!("output = {output}");
+        // info!("env = {}", self.data_table.env[0]);
+        // info!(
+        //     "self.mod_level {}",
+        //     calculate_modulation(self.level, self.level_mod)
+        // );
 
         // TODO: add an allpass filter.
         Some(output * self.data_table.env[0] * calculate_modulation(self.level, self.level_mod))

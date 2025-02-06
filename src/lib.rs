@@ -9,13 +9,16 @@ use fern::colors::{Color, ColoredLevelConfig};
 use fxhash::FxHashMap;
 use fxhash::FxHashSet;
 use log::*;
+use midi_control::KeyEvent;
 use midi_control::MidiMessage;
 use midir::MidiInput;
 use midir::{Ignore, PortInfoError};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use std::thread::JoinHandle;
+use synth_engines::synth::osc::N_OVERTONES;
+// use std::thread::JoinHandle;
+use synth_engines::synth::build_sine_table;
 use voice::Voice;
 
 pub type HashMap<Key, Val> = FxHashMap<Key, Val>;
@@ -50,8 +53,8 @@ pub trait ModulationDest {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct App {
-    /// join handle for the run_midi thread
-    _handle: JoinHandle<()>,
+    // /// join handle for the run_midi thread
+    // _handle: JoinHandle<()>,
     /// used to coordinate exits from run_midi function
     exit: Arc<AtomicBool>,
     /// describes what modulates what.
@@ -59,7 +62,28 @@ pub struct App {
     /// used for routung cc messages
     midi_table: [Option<ModMatrixDest>; 256],
     /// the sound producers
-    voices: [Voice; POLYPHONY],
+    voices: Arc<[Mutex<Voice>]>,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        let mut overtones = [1.0; N_OVERTONES];
+
+        (1..N_OVERTONES).for_each(|i| overtones[i] = (i + 1) as f64);
+
+        let wave_table = build_sine_table(&overtones);
+
+        let voices = (0..POLYPHONY)
+            .map(|_| Mutex::new(Voice::new(wave_table.clone())))
+            .collect();
+
+        Self {
+            exit: Arc::new(false.into()),
+            mod_matrix: [None; 256],
+            midi_table: [None; 256],
+            voices,
+        }
+    }
 }
 
 #[allow(unused_variables)]
@@ -67,6 +91,29 @@ impl MidiControlled for App {
     fn midi_input(&mut self, message: &MidiMessage) {
         // TODO: if note, add midi note to the data table
         // TODO: if cc, route based on learned midi table
+        match *message {
+            MidiMessage::NoteOn(_channel, KeyEvent { key, value }) => {
+                for voice in self.voices.iter() {
+                    let mut voice = voice.lock().unwrap();
+
+                    if voice.playing.is_none() {
+                        info!("playing note {key}");
+                        voice.press(key, value);
+                        break;
+                    }
+                }
+            }
+            MidiMessage::NoteOff(_channel, KeyEvent { key, value }) => {
+                for voice in self.voices.iter() {
+                    let mut voice = voice.lock().unwrap();
+
+                    if voice.playing.is_some_and(|note| note == key) {
+                        voice.release();
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 }
 
@@ -74,11 +121,13 @@ impl SampleGen for App {
     fn get_sample(&mut self) -> f32 {
         let sample: f32 = self
             .voices
-            .iter_mut()
-            .filter_map(|voice| voice.get_sample(&self.mod_matrix))
+            .iter()
+            .filter_map(|voice| voice.lock().unwrap().get_sample(&self.mod_matrix))
             .sum();
 
         // TODO: add an AllPass filter
+
+        // warn!("sample {sample}");
 
         (sample * 0.9).tanh()
     }
@@ -94,8 +143,12 @@ pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
     base + base * amt
 }
 
-pub fn run_midi(synth: Arc<Mutex<App>>, exit: Arc<AtomicBool>) -> Result<()> {
+pub fn run_midi(synth: Arc<Mutex<App>> /* , exit: Arc<AtomicBool> */) -> Result<()> {
     let mut registered_ports = HashMap::default();
+    let exit = {
+        let app = synth.lock().unwrap();
+        app.exit.clone()
+    };
 
     while !exit.load(Ordering::Relaxed) {
         let mut midi_in = MidiInput::new("midir reading input")?;
