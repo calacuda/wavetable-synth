@@ -127,7 +127,7 @@ impl LowPass {
             resonance: 0.5,
             note: 0.0,
             // range: (0.0, 0.0),
-            key_track: false,
+            key_track: true,
             mix: 0.0,
             cutoff_mod: 0.0,
             res_mod: 0.0,

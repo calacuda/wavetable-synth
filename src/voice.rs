@@ -52,8 +52,8 @@ impl Voice {
         osc_2.target = OscTarget::Filter2;
         osc_3.target = OscTarget::Filter1_2;
 
-        let mut lpf = LowPass::new();
-        lpf.key_track = true;
+        let lpf = LowPass::new();
+        // lpf.key_track = true;
 
         Self {
             oscs: [(osc_1, true), (osc_2, false), (osc_3, false)],
