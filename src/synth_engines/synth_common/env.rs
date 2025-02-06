@@ -1,4 +1,4 @@
-use crate::config::SAMPLE_RATE;
+use crate::{common::EnvParam, config::SAMPLE_RATE, ModulationDest};
 // use log::*;
 
 pub static UNPRESSED: usize = 0;
@@ -124,5 +124,17 @@ impl ADSR {
     /// returns true if the env filter is not released
     pub fn pressed(&self) -> bool {
         self.phase != RELEASE && self.phase != UNPRESSED
+    }
+}
+
+impl ModulationDest for ADSR {
+    type ModTarget = EnvParam;
+
+    fn modulate(&mut self, what: Self::ModTarget, by: f32) {
+        todo!("write ADSR modulation");
+    }
+
+    fn reset(&mut self) {
+        todo!("write ADSR modulation");
     }
 }

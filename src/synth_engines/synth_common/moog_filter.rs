@@ -1,4 +1,4 @@
-use crate::config::SAMPLE_RATE;
+use crate::{calculate_modulation, common::LowPassParam, config::SAMPLE_RATE, ModulationDest};
 // use num_traits::clamp;
 use std::f32::consts::PI;
 
@@ -105,9 +105,13 @@ pub struct LowPass {
     filter: HuovilainenMoog,
     pub cutoff: f32,
     pub resonance: f32,
+    pub mix: f32,
     pub note: f32,
     // pub range: (f32, f32),
     pub key_track: bool,
+    pub cutoff_mod: f32,
+    pub res_mod: f32,
+    pub mix_mod: f32,
 }
 
 impl LowPass {
@@ -122,6 +126,10 @@ impl LowPass {
             note: 0.0,
             // range: (0.0, 0.0),
             key_track: false,
+            mix: 0.0,
+            cutoff_mod: 0.0,
+            res_mod: 0.0,
+            mix_mod: 0.0,
         }
     }
 
@@ -148,11 +156,34 @@ impl LowPass {
         // let nudge = delta * env * self.cutoff;
         // let cutoff = (self.note) + nudge;
 
-        self.filter.process(sample, self.cutoff, self.resonance)
+        self.filter.process(
+            sample,
+            calculate_modulation(self.cutoff, self.cutoff_mod),
+            calculate_modulation(self.resonance, self.res_mod),
+        ) * (1.0 - calculate_modulation(self.mix, self.mix_mod))
+            + sample * calculate_modulation(self.mix, self.mix_mod)
     }
 
     pub fn set_note(&mut self, note: f32) {
         self.note = note;
+    }
+}
+
+impl ModulationDest for LowPass {
+    type ModTarget = LowPassParam;
+
+    fn modulate(&mut self, what: Self::ModTarget, by: f32) {
+        match what {
+            Self::ModTarget::Cutoff => self.cutoff_mod = by,
+            Self::ModTarget::Res => self.res_mod = by,
+            Self::ModTarget::Mix => self.mix_mod = by,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.cutoff_mod = 0.0;
+        self.res_mod = 0.0;
+        self.mix_mod = 0.0;
     }
 }
 

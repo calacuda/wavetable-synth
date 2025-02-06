@@ -39,61 +39,13 @@ pub trait SampleGen {
     fn get_sample(&mut self) -> f32;
 }
 
-// #[allow(unused_variables)]
-// #[enum_dispatch(EffectsModule, SynthModule)]
-// pub trait KnobCtrl {
-//     // parameters edited by the MIDI controllers built in knobs
-//     fn knob_1(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_2(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_3(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_4(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_5(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_6(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_7(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn knob_8(&mut self, value: f32) -> bool {
-//         false
-//     }
-//
-//     // the parameters edited by the GUI
-//     fn gui_param_1(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_2(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_3(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_4(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_5(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_6(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_7(&mut self, value: f32) -> bool {
-//         false
-//     }
-//     fn gui_param_8(&mut self, value: f32) -> bool {
-//         false
-//     }
-// }
+pub trait ModulationDest {
+    type ModTarget;
+
+    fn modulate(&mut self, what: Self::ModTarget, by: f32);
+    /// clears any aplied modulation.
+    fn reset(&mut self);
+}
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -106,7 +58,7 @@ pub struct App {
     mod_matrix: ModMatrix,
     /// used for routung cc messages
     midi_table: [Option<ModMatrixDest>; 256],
-    /// describes how loud the
+    /// describes how loud the synth is
     level: f32,
     /// the sound producers
     voices: [Voice; POLYPHONY],
@@ -138,6 +90,10 @@ pub fn midi_to_freq(midi_note: i16) -> f32 {
     let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
 
     2.0_f32.powf(exp)
+}
+
+pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
+    base + base * amt
 }
 
 pub fn run_midi(synth: Arc<Mutex<App>>, exit: Arc<AtomicBool>) -> Result<()> {

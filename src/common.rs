@@ -15,9 +15,34 @@ pub struct DataTable {
     pub direct_out: f32,
     // pub notes: [Option<(MidiNote, u8)>; POLYPHONY],
     pub note: Option<MidiNote>,
+    // pub freq: Option<f32>,
     pub velocity: Option<u8>,
     pub pitch_bend: f32,
     pub mod_wheel: f32,
+    pub macros: [f32; 4],
+}
+
+impl DataTable {
+    pub fn get_entry(&self, src: &ModMatrixSrc) -> f32 {
+        match src {
+            ModMatrixSrc::Velocity => self.note.map(|vel| vel as f32 / 255.0).unwrap_or(0.0),
+            ModMatrixSrc::Gate => {
+                if self.note.is_some() {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            ModMatrixSrc::PitchWheel => self.pitch_bend,
+            ModMatrixSrc::ModWheel => self.mod_wheel,
+            ModMatrixSrc::Env(i) => self.env[*i],
+            ModMatrixSrc::Lfo(i) => self.lfos[*i],
+            ModMatrixSrc::Macro1 => self.macros[0],
+            ModMatrixSrc::Macro2 => self.macros[1],
+            ModMatrixSrc::Macro3 => self.macros[2],
+            ModMatrixSrc::Macro4 => self.macros[3],
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -45,7 +70,7 @@ pub enum ModMatrixSrc {
 pub enum OscParam {
     Level,
     Tune,
-    Pan,
+    // Pan,
 }
 
 // #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -89,8 +114,8 @@ pub enum LowPassParam {
     Cutoff,
     Res,
     Mix,
-    KeyTrack,
-    Drive,
+    // KeyTrack,
+    // Drive,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -117,10 +142,10 @@ pub enum ModMatrixDest {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct ModMatrixItem {
-    src: ModMatrixSrc,
-    dest: ModMatrixDest,
-    amt: f32,
-    bipolar: bool,
+    pub src: ModMatrixSrc,
+    pub dest: ModMatrixDest,
+    pub amt: f32,
+    pub bipolar: bool,
 }
 
 // #[derive(Debug)]

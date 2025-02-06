@@ -1,5 +1,6 @@
 use crate::{
-    common::DataTable,
+    calculate_modulation,
+    common::{DataTable, LowPass as LP, ModMatrixDest},
     config::{N_ENV, N_LFO, N_OSC},
     effects::{chorus::Chorus, reverb::Reverb, Effect, EffectsModule},
     lfo::LFO,
@@ -8,7 +9,7 @@ use crate::{
         synth::osc::{OscTarget, Oscillator},
         synth_common::{env::ADSR, moog_filter::LowPass},
     },
-    ModMatrix, SampleGen, WaveTable,
+    ModMatrix, ModulationDest, SampleGen, WaveTable,
 };
 use std::ops::Deref;
 
@@ -28,6 +29,8 @@ pub struct Voice {
     effects: [(EffectsModule, bool); 2],
     /// holds the out put of the different modules and also other needed data (velocity, and note).
     data_table: DataTable,
+    level: f32,
+    level_mod: f32,
 }
 
 impl Voice {
@@ -55,6 +58,8 @@ impl Voice {
             playing: None,
             data_table: DataTable::default(),
             effects,
+            level: 1.0,
+            level_mod: 0.0,
         }
     }
 
@@ -70,7 +75,7 @@ impl Voice {
                 filter.set_note(midi_to_freq(midi_note as i16));
             }
         });
-        // self.lfos.iter_mut().for_each(|lfo| lfo.start());
+        self.lfos.iter_mut().for_each(|lfo| lfo.press());
         self.playing = Some(midi_note);
     }
 
@@ -81,6 +86,7 @@ impl Voice {
             }
         });
         self.envs.iter_mut().for_each(|env| env.release());
+        self.lfos.iter_mut().for_each(|lfo| lfo.release());
         // self.filters.iter_mut().for_each(|filter| {
         //     if filter.key_track {
         //         filter.set_note(midi_to_freq(midi_note));
@@ -92,10 +98,60 @@ impl Voice {
     /// ressets the mod matrix along with the effects, lfos, oscilators, etc
     pub fn reset(&mut self) {
         // self.lfos.iter_mut().for_each(|lfo| lfo.index);
+        self.oscs.iter_mut().for_each(|(osc, on)| {
+            if *on {
+                osc.reset()
+            }
+        });
+        self.lfos.iter_mut().for_each(|lfo| lfo.reset());
+        self.envs.iter_mut().for_each(|env| env.reset());
+        self.filters.iter_mut().for_each(|lp| lp.reset());
+        self.level_mod = 0.0;
+        // TODO: figure out how to reset a modulation of mod amount
     }
 
     /// send data from data_table where ever it needs to go, based on the mod_natrix
-    pub fn route_mod_matrix(&mut self, mod_matrix: &ModMatrix) {}
+    pub fn route_mod_matrix(&mut self, mod_matrix: &ModMatrix) {
+        for mod_entry in mod_matrix {
+            if let Some(entry) = mod_entry {
+                // get mod amount
+                let mut amt = self.data_table.get_entry(&entry.src) * entry.amt;
+
+                if entry.bipolar {
+                    amt -= entry.amt / 2.0;
+                }
+
+                match entry.dest {
+                    ModMatrixDest::ModMatrixEntryModAmt(mod_amt_amt) => {
+                        todo!("figure out a way to modulate mod amounts");
+                    }
+                    ModMatrixDest::Osc { osc, param } => {
+                        let (osc, on) = &mut self.oscs[osc];
+
+                        if *on {
+                            osc.modulate(param, amt);
+                        }
+                    }
+                    ModMatrixDest::Env { env, param } => self.envs[env].modulate(param, amt),
+                    ModMatrixDest::Lfo { lfo, param } => self.lfos[lfo].modulate(param, amt),
+                    ModMatrixDest::LowPass { low_pass, param } => match low_pass {
+                        LP::LP1 => self.filters[0].modulate(param, amt),
+                        LP::LP2 => self.filters[1].modulate(param, amt),
+                    },
+                    ModMatrixDest::SynthVolume => self.modulate_level(amt),
+                };
+            }
+        }
+        // for (osc, on) in self.oscs.iter_mut() {
+        //     if on {
+        //         osc.mod
+        //     }
+        // }
+    }
+
+    fn modulate_level(&mut self, amt: f32) {
+        self.level_mod = amt;
+    }
 
     pub fn get_sample(&mut self, mod_matrix: &ModMatrix) -> Option<f32> {
         if self.playing.is_none() {
@@ -177,6 +233,6 @@ impl Voice {
         }
 
         // TODO: add an allpass filter.
-        Some(output * self.data_table.env[0])
+        Some(output * self.data_table.env[0] * calculate_modulation(self.level, self.level_mod))
     }
 }

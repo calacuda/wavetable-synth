@@ -1,6 +1,8 @@
 use crate::{
+    calculate_modulation,
+    common::LfoParam,
     config::{SAMPLE_RATE, WAVE_TABLE_SIZE},
-    SampleGen, WaveTable,
+    ModulationDest, SampleGen, WaveTable,
 };
 
 /// the WaveTable oscilator that is used for generating LFO samples
@@ -69,6 +71,7 @@ impl LfoWaveTableOsc {
 pub struct LFO {
     /// can be modulated by envelopes, lfos, velocity, etc
     freq: f32,
+    speed_mod: f32,
     wave_table: WaveTable,
     pub osc: LfoWaveTableOsc,
     playing: bool,
@@ -80,6 +83,7 @@ impl LFO {
 
         Self {
             freq: 2.0,
+            speed_mod: 0.0,
             wave_table,
             osc: LfoWaveTableOsc::new(),
             playing: false,
@@ -118,6 +122,26 @@ impl LFO {
 impl SampleGen for LFO {
     fn get_sample(&mut self) -> f32 {
         self.osc.get_sample(&self.wave_table)
+    }
+}
+
+impl ModulationDest for LFO {
+    type ModTarget = LfoParam;
+
+    fn modulate(&mut self, what: Self::ModTarget, by: f32) {
+        match what {
+            Self::ModTarget::Speed => {
+                // if self.speed_mod != by {
+                self.speed_mod = by;
+                self.osc.set_frequency(calculate_modulation(self.freq, by))
+                // }
+            }
+        }
+    }
+
+    fn reset(&mut self) {
+        self.speed_mod = 0.0;
+        self.osc.set_frequency(self.freq);
     }
 }
 

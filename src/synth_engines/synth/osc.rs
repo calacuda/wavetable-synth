@@ -1,6 +1,8 @@
 use crate::{
+    calculate_modulation,
+    common::OscParam,
     config::{SAMPLE_RATE, WAVE_TABLE_SIZE},
-    midi_to_freq, SampleGen, WaveTable,
+    midi_to_freq, ModulationDest, SampleGen, WaveTable,
 };
 
 pub const N_OVERTONES: usize = 32;
@@ -68,8 +70,10 @@ pub struct Oscillator {
     frequency: f32,
     base_frequency: f32,
     level: f32,
+    level_mod: f32,
     // pan: f32,
     detune: f32,
+    detune_mod: f32,
     offset: i16,
     pub target: OscTarget,
     pub wave_table: WaveTable,
@@ -82,7 +86,9 @@ impl Oscillator {
             frequency: 0.0,
             base_frequency: 0.0,
             level: 0.75,
+            level_mod: 0.0,
             detune: 0.0,
+            detune_mod: 0.0,
             offset: 0,
             target: OscTarget::Filter1,
             wave_table,
@@ -106,14 +112,14 @@ impl Oscillator {
         // }
         self.detune();
 
-        self.osc.get_sample(&self.wave_table) * self.level
+        self.osc.get_sample(&self.wave_table) * calculate_modulation(self.level, self.level_mod)
     }
 
     pub fn detune(&mut self) {
         // println!("bending");
-        let amt = if self.detune != 0.0 {
-            self.detune
-        } else {
+        let amt = calculate_modulation(self.detune, self.detune_mod);
+
+        if amt == 0.0 {
             return;
         };
 
@@ -153,6 +159,22 @@ impl Oscillator {
         // println!("unbend => {}", self.base_frequency);
         self.osc.set_frequency(self.base_frequency);
         self.frequency = self.base_frequency;
+    }
+}
+
+impl ModulationDest for Oscillator {
+    type ModTarget = OscParam;
+
+    fn modulate(&mut self, what: Self::ModTarget, by: f32) {
+        match what {
+            Self::ModTarget::Level => self.level_mod = by,
+            Self::ModTarget::Tune => self.detune_mod = by,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.level_mod = 0.0;
+        self.detune_mod = 0.0;
     }
 }
 
