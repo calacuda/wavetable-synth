@@ -29,7 +29,9 @@ pub struct Voice {
     effects: [(EffectsModule, bool); 2],
     /// holds the out put of the different modules and also other needed data (velocity, and note).
     data_table: DataTable,
+    /// describes how loud the synth is
     level: f32,
+    /// stores the modulation amount for level
     level_mod: f32,
 }
 
@@ -106,8 +108,10 @@ impl Voice {
         self.lfos.iter_mut().for_each(|lfo| lfo.reset());
         self.envs.iter_mut().for_each(|env| env.reset());
         self.filters.iter_mut().for_each(|lp| lp.reset());
-        self.level_mod = 0.0;
         // TODO: figure out how to reset a modulation of mod amount
+
+        // reset self
+        self.level_mod = 0.0;
     }
 
     /// send data from data_table where ever it needs to go, based on the mod_natrix

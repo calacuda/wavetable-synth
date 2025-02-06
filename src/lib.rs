@@ -58,8 +58,6 @@ pub struct App {
     mod_matrix: ModMatrix,
     /// used for routung cc messages
     midi_table: [Option<ModMatrixDest>; 256],
-    /// describes how loud the synth is
-    level: f32,
     /// the sound producers
     voices: [Voice; POLYPHONY],
 }
