@@ -85,7 +85,7 @@ impl Oscillator {
             osc: WavetableOscillator::new(),
             frequency: 0.0,
             base_frequency: 0.0,
-            level: 0.75,
+            level: 1.0,
             level_mod: 0.0,
             detune: 0.0,
             detune_mod: 0.0,

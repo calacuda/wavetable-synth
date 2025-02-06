@@ -127,13 +127,7 @@ impl SampleGen for App {
 
         // TODO: add an AllPass filter
 
-        // warn!("sample {sample}");
-
-        let sample = (sample * 0.9).tanh();
-
-        // info!("sample {sample}");
-
-        sample
+        sample.tanh()
     }
 }
 
