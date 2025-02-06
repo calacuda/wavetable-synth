@@ -97,7 +97,7 @@ impl MidiControlled for App {
                     let mut voice = voice.lock().unwrap();
 
                     if voice.playing.is_none() {
-                        info!("playing note {key}");
+                        // info!("playing note {key}");
                         voice.press(key, value);
                         break;
                     }
