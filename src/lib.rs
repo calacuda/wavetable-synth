@@ -80,7 +80,7 @@ impl SampleGen for App {
 
         // TODO: add an AllPass filter
 
-        (sample * 0.85 * self.level).tanh()
+        (sample * 0.9).tanh()
     }
 }
 
