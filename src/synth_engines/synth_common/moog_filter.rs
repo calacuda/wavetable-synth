@@ -1,3 +1,5 @@
+use log::warn;
+
 use crate::{calculate_modulation, common::LowPassParam, config::SAMPLE_RATE, ModulationDest};
 // use num_traits::clamp;
 use std::f32::consts::PI;
@@ -152,13 +154,15 @@ impl LowPass {
         // } else {
         //     self.note
         // };
-        // let delta = self.note * 12.0;
-        // let nudge = delta * env * self.cutoff;
-        // let cutoff = (self.note) + nudge;
+        let delta = self.note * 12.0;
+        let nudge = delta * calculate_modulation(self.cutoff, self.cutoff_mod);
+        let cutoff = (self.note) + nudge;
+
+        // warn!("self.note {}", self.note);
 
         self.filter.process(
             sample,
-            calculate_modulation(self.cutoff, self.cutoff_mod),
+            cutoff,
             calculate_modulation(self.resonance, self.res_mod),
         ) * (1.0 - calculate_modulation(self.mix, self.mix_mod))
             + sample * calculate_modulation(self.mix, self.mix_mod)

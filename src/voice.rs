@@ -44,12 +44,19 @@ impl Voice {
             (EffectsModule::Reverb(Reverb::new()), false),
         ];
 
+        let mut osc_1 = Oscillator::new(wave_table.deref().into());
+        let mut osc_2 = Oscillator::new(wave_table.deref().into());
+        let mut osc_3 = Oscillator::new(wave_table.deref().into());
+
+        osc_1.target = OscTarget::Filter1;
+        osc_2.target = OscTarget::Filter2;
+        osc_3.target = OscTarget::Filter1_2;
+
+        let mut lpf = LowPass::new();
+        lpf.key_track = true;
+
         Self {
-            oscs: [
-                (Oscillator::new(wave_table.deref().into()), true),
-                (Oscillator::new(wave_table.deref().into()), false),
-                (Oscillator::new(wave_table.deref().into()), false),
-            ],
+            oscs: [(osc_1, true), (osc_2, false), (osc_3, false)],
             envs: [
                 ADSR::new(),
                 ADSR::new(),
@@ -58,7 +65,7 @@ impl Voice {
                 ADSR::new(),
             ],
             lfos: [LFO::new(), LFO::new(), LFO::new(), LFO::new()],
-            filters: [LowPass::new(), LowPass::new()],
+            filters: [lpf.clone(), lpf],
             playing: None,
             data_table: DataTable::default(),
             effects,

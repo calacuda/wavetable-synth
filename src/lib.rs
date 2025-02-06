@@ -129,7 +129,11 @@ impl SampleGen for App {
 
         // warn!("sample {sample}");
 
-        (sample * 0.9).tanh()
+        let sample = (sample * 0.9).tanh();
+
+        // info!("sample {sample}");
+
+        sample
     }
 }
 
