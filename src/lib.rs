@@ -11,14 +11,13 @@ use fxhash::FxHashSet;
 use log::*;
 use midi_control::KeyEvent;
 use midi_control::MidiMessage;
-use midir::MidiInput;
-use midir::{Ignore, PortInfoError};
+// use midir::MidiInput;
+// use midir::{Ignore, PortInfoError};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use synth_engines::synth::osc::N_OVERTONES;
-// use std::thread::JoinHandle;
 use synth_engines::synth::build_sine_table;
+use synth_engines::synth::osc::N_OVERTONES;
 use voice::Voice;
 
 pub type HashMap<Key, Val> = FxHashMap<Key, Val>;
@@ -53,8 +52,6 @@ pub trait ModulationDest {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct App {
-    // /// join handle for the run_midi thread
-    // _handle: JoinHandle<()>,
     /// used to coordinate exits from run_midi function
     exit: Arc<AtomicBool>,
     /// describes what modulates what.
@@ -141,7 +138,10 @@ pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
     base + base * amt
 }
 
+#[cfg(feature = "desktop")]
 pub fn run_midi(synth: Arc<Mutex<App>> /* , exit: Arc<AtomicBool> */) -> Result<()> {
+    use midir::{Ignore, MidiInput, PortInfoError};
+
     let mut registered_ports = HashMap::default();
     let exit = {
         let app = synth.lock().unwrap();
