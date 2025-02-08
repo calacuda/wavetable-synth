@@ -21,3 +21,5 @@
 pub mod configs;
 
 pub use configs::*;
+
+// pub const MAX_LFOS: usize = 5;

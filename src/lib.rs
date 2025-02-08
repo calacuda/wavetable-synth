@@ -2,6 +2,8 @@
 use anyhow::Result;
 use common::ModMatrixDest;
 use common::ModMatrixItem;
+use config::LFO_WAVE_TABLE_SIZE;
+use config::OSC_WAVE_TABLE_SIZE;
 use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
@@ -23,7 +25,9 @@ use voice::Voice;
 pub type HashMap<Key, Val> = FxHashMap<Key, Val>;
 pub type HashSet<T> = FxHashSet<T>;
 pub type ModMatrix = [Option<ModMatrixItem>; 256];
-pub type WaveTable = Arc<[f32]>;
+// pub type WaveTable = Arc<[f32]>;
+pub type OscWaveTable = [f32; OSC_WAVE_TABLE_SIZE];
+pub type LfoWaveTable = [f32; LFO_WAVE_TABLE_SIZE];
 
 pub mod common;
 pub mod config;

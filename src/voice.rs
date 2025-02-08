@@ -1,4 +1,6 @@
-use log::info;
+use std::{cmp::min, ops::IndexMut};
+
+use array_macro::array;
 
 use crate::{
     calculate_modulation,
@@ -11,9 +13,25 @@ use crate::{
         synth::osc::{OscTarget, Oscillator},
         synth_common::{env::ADSR, moog_filter::LowPass},
     },
-    ModMatrix, ModulationDest, SampleGen, WaveTable,
+    ModMatrix, ModulationDest, OscWaveTable, SampleGen,
 };
-use std::ops::Deref;
+
+// #[macro_export]
+// macro_rules! array {
+//     [$expr:expr; 0] => {
+//         []
+//     };
+//     // [$expr:expr; $count:expr, false] =>
+//     // };
+//     [$expr:expr; $count:expr] => {{
+//         // let value = $expr;
+//         // $crate::array![_ => $crate::__core::clone::Clone::clone(&value); $count]
+//         [ $crate::array![$expr; $count - 1, false], $expr ]
+//     }};
+//     // [$i:pat => $e:expr; $count:expr] => {
+//     //     $crate::__array![$i => $e; $count]
+//     // };
+// }
 
 #[derive(Clone, Debug)]
 pub struct Voice {
@@ -38,33 +56,30 @@ pub struct Voice {
 }
 
 impl Voice {
-    pub fn new(wave_table: WaveTable) -> Self {
+    pub fn new(wave_table: OscWaveTable) -> Self {
         let effects = [
             (EffectsModule::Chorus(Chorus::new()), false),
             (EffectsModule::Reverb(Reverb::new()), false),
         ];
-
-        let mut osc_1 = Oscillator::new(wave_table.deref().into());
-        let mut osc_2 = Oscillator::new(wave_table.deref().into());
-        let mut osc_3 = Oscillator::new(wave_table.deref().into());
-
-        osc_1.target = OscTarget::Filter1;
-        osc_2.target = OscTarget::Filter2;
-        osc_3.target = OscTarget::Filter1_2;
-
         let lpf = LowPass::new();
-        // lpf.key_track = true;
+        let mut oscs = array![(Oscillator::new(wave_table), false); N_OSC];
+        oscs[0].1 = true;
+        let targets = [
+            OscTarget::Filter1,
+            OscTarget::Filter2,
+            OscTarget::Filter1_2,
+            OscTarget::Effects,
+            OscTarget::DirectOut,
+        ];
+
+        for i in 0..min(N_OSC, targets.len()) {
+            oscs.index_mut(i).0.target = targets[i];
+        }
 
         Self {
-            oscs: [(osc_1, true), (osc_2, false), (osc_3, false)],
-            envs: [
-                ADSR::new(),
-                ADSR::new(),
-                ADSR::new(),
-                ADSR::new(),
-                ADSR::new(),
-            ],
-            lfos: [LFO::new(), LFO::new(), LFO::new(), LFO::new()],
+            oscs,
+            envs: array![ADSR::new(); N_ENV],
+            lfos: array![LFO::new(); N_LFO],
             filters: [lpf.clone(), lpf],
             playing: None,
             data_table: DataTable::default(),
@@ -98,8 +113,8 @@ impl Voice {
                 osc.0.release()
             }
         });
-        self.envs.iter_mut().for_each(|env| env.release());
         self.lfos.iter_mut().for_each(|lfo| lfo.release());
+        self.envs.iter_mut().for_each(|env| env.release());
         // self.filters.iter_mut().for_each(|filter| {
         //     if filter.key_track {
         //         filter.set_note(midi_to_freq(midi_note));

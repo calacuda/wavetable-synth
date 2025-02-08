@@ -1,0 +1,14 @@
+[package]
+name = "desktop-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.95"
+log = "0.4.25"
+midir = "0.10.1"
+tinyaudio = "1.1.0"
+wavetable-synth = { version = "0.1.0", path = "../..", features = ["desktop"] }
+
+# [lints]
+# workspace = true

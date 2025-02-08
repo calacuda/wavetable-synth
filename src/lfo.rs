@@ -1,8 +1,8 @@
 use crate::{
     calculate_modulation,
     common::LfoParam,
-    config::{SAMPLE_RATE, WAVE_TABLE_SIZE},
-    ModulationDest, SampleGen, WaveTable,
+    config::{LFO_WAVE_TABLE_SIZE, SAMPLE_RATE},
+    LfoWaveTable, ModulationDest, SampleGen,
 };
 
 /// the WaveTable oscilator that is used for generating LFO samples
@@ -21,7 +21,7 @@ impl LfoWaveTableOsc {
             sample_rate: SAMPLE_RATE as f32,
             index: 0.0,
             index_increment: 0.0,
-            wave_table_len: WAVE_TABLE_SIZE as f32,
+            wave_table_len: LFO_WAVE_TABLE_SIZE as f32,
             freq: 2.0,
         }
     }
@@ -56,7 +56,7 @@ impl LfoWaveTableOsc {
 
     fn lerp(&self, wave_table: &[f32]) -> f32 {
         let truncated_index = self.index as usize;
-        let next_index = (truncated_index + 1) % WAVE_TABLE_SIZE;
+        let next_index = (truncated_index + 1) % LFO_WAVE_TABLE_SIZE;
 
         let next_index_weight = self.index - truncated_index as f32;
         let truncated_index_weight = 1.0 - next_index_weight;
@@ -72,7 +72,7 @@ pub struct LFO {
     /// can be modulated by envelopes, lfos, velocity, etc
     freq: f32,
     speed_mod: f32,
-    wave_table: WaveTable,
+    wave_table: LfoWaveTable,
     pub osc: LfoWaveTableOsc,
     playing: bool,
 }
@@ -103,7 +103,7 @@ impl LFO {
         self.osc.set_frequency(frequency);
     }
 
-    pub fn set_wave_table(&mut self, wave_table: WaveTable) {
+    pub fn set_wave_table(&mut self, wave_table: LfoWaveTable) {
         self.wave_table = wave_table;
         self.osc.set_wave_table_size(self.wave_table.len());
     }
@@ -145,19 +145,21 @@ impl ModulationDest for LFO {
     }
 }
 
-fn mk_default_lfo_wt() -> WaveTable {
-    let size = WAVE_TABLE_SIZE * 4;
+fn mk_default_lfo_wt() -> LfoWaveTable {
+    let size = LFO_WAVE_TABLE_SIZE;
     let half_way = size as f32 / 2.0;
     let slope = 2.0 / size as f32;
     let f = |i: usize| slope * i as f32;
 
-    (0..size)
-        .map(|i| {
-            if i as f32 <= half_way {
-                f(i)
-            } else {
-                1.0 - f(i)
-            }
-        })
-        .collect()
+    let mut table = [0.0; LFO_WAVE_TABLE_SIZE];
+
+    for i in 0..size {
+        table[i] = if i as f32 <= half_way {
+            f(i)
+        } else {
+            1.0 - f(i)
+        };
+    }
+
+    table
 }

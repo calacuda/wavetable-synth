@@ -1,8 +1,8 @@
 use crate::{
     calculate_modulation,
     common::OscParam,
-    config::{SAMPLE_RATE, WAVE_TABLE_SIZE},
-    midi_to_freq, ModulationDest, SampleGen, WaveTable,
+    config::{OSC_WAVE_TABLE_SIZE, SAMPLE_RATE},
+    midi_to_freq, ModulationDest, OscWaveTable, SampleGen,
 };
 
 pub const N_OVERTONES: usize = 32;
@@ -25,19 +25,15 @@ pub struct WavetableOscillator {
 
 impl WavetableOscillator {
     pub fn new() -> Self {
-        // let overtones: Vec<f64> = (1..=N_OVERTONES).map(|i| i as f64).collect();
-        // let wave_table = build_sine_table(&overtones);
-
         Self {
             sample_rate: SAMPLE_RATE as f32,
             index: 0.0,
             index_increment: 0.0,
-            // wave_table,
         }
     }
 
     pub fn set_frequency(&mut self, frequency: f32) {
-        self.index_increment = frequency * WAVE_TABLE_SIZE as f32 / self.sample_rate;
+        self.index_increment = frequency * OSC_WAVE_TABLE_SIZE as f32 / self.sample_rate;
         self.index = 0.0;
     }
 
@@ -47,14 +43,14 @@ impl WavetableOscillator {
         sample += self.lerp(wave_table);
 
         self.index += self.index_increment;
-        self.index %= WAVE_TABLE_SIZE as f32;
+        self.index %= OSC_WAVE_TABLE_SIZE as f32;
 
         sample * 0.9
     }
 
     fn lerp(&self, wave_table: &[f32]) -> f32 {
         let truncated_index = self.index as usize;
-        let next_index = (truncated_index + 1) % WAVE_TABLE_SIZE;
+        let next_index = (truncated_index + 1) % OSC_WAVE_TABLE_SIZE;
 
         let next_index_weight = self.index - truncated_index as f32;
         let truncated_index_weight = 1.0 - next_index_weight;
@@ -76,11 +72,11 @@ pub struct Oscillator {
     detune_mod: f32,
     offset: i16,
     pub target: OscTarget,
-    pub wave_table: WaveTable,
+    pub wave_table: OscWaveTable,
 }
 
 impl Oscillator {
-    pub fn new(wave_table: WaveTable) -> Self {
+    pub fn new(wave_table: OscWaveTable) -> Self {
         Self {
             osc: WavetableOscillator::new(),
             frequency: 0.0,
