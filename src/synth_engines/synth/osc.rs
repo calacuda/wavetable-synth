@@ -1,3 +1,5 @@
+use libm::powf;
+
 use crate::{
     calculate_modulation,
     common::OscParam,
@@ -119,7 +121,8 @@ impl Oscillator {
             return;
         };
 
-        let nudge = 2.0_f32.powf(amt / 12.0);
+        // let nudge = 2.0_f32.powf(amt / 12.0);
+        let nudge = powf(2.0, amt / 12.0);
         let new_freq = if amt < 0.0 {
             self.frequency / nudge
         } else if amt > 0.0 {
@@ -136,7 +139,8 @@ impl Oscillator {
 
     pub fn bend(&mut self, bend: f32) {
         // println!("bending");
-        let nudge = 2.0_f32.powf((bend * 3.0) / 12.0);
+        // let nudge = 2.0_f32.powf((bend * 3.0) / 12.0);
+        let nudge = powf(2.0, (bend * 3.0) / 12.0);
         let new_freq = if bend < 0.0 {
             self.base_frequency / nudge
         } else if bend > 0.0 {

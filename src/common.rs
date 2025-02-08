@@ -1,6 +1,8 @@
 use crate::config::{N_ENV, N_LFO, N_OSC};
-use midi_control::MidiNote;
+// use midi_control::MidiNote;
 use serde::{Deserialize, Serialize};
+
+pub type MidiNote = u8;
 
 /// one per voice
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]

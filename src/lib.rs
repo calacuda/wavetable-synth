@@ -8,18 +8,17 @@ use config::OSC_WAVE_TABLE_SIZE;
 use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
-use fern::colors::{Color, ColoredLevelConfig};
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use libm::powf;
 use log::*;
-use midi_control::KeyEvent;
-use midi_control::MidiMessage;
+// use midi_control::KeyEvent;
+// use midi_control::MidiMessage;
 use synth_engines::synth::build_sine_table;
 use synth_engines::synth::osc::N_OVERTONES;
 use voice::Voice;
 
-pub type HashMap<Key, Val> = FxHashMap<Key, Val>;
-pub type HashSet<T> = FxHashSet<T>;
+#[cfg(feature = "desktop")]
+pub type HashMap<Key, Val> = fxhash::FxHashMap<Key, Val>;
+// pub type HashSet<T> = FxHashSet<T>;
 pub type ModMatrix = [Option<ModMatrixItem>; 256];
 // pub type WaveTable = Arc<[f32]>;
 pub type OscWaveTable = [f32; OSC_WAVE_TABLE_SIZE];
@@ -32,8 +31,9 @@ pub mod lfo;
 pub mod synth_engines;
 pub mod voice;
 
+#[cfg(feature = "desktop")]
 pub trait MidiControlled {
-    fn midi_input(&mut self, message: &MidiMessage);
+    fn midi_input(&mut self, message: &midi_control::MidiMessage);
 }
 
 #[enum_dispatch(EffectsModule)]
@@ -90,7 +90,9 @@ impl Default for App {
 #[cfg(feature = "desktop")]
 #[allow(unused_variables)]
 impl MidiControlled for App {
-    fn midi_input(&mut self, message: &MidiMessage) {
+    fn midi_input(&mut self, message: &midi_control::MidiMessage) {
+        use midi_control::{KeyEvent, MidiMessage};
+
         // TODO: if note, add midi note to the data table
         // TODO: if cc, route based on learned midi table
         match *message {
@@ -137,7 +139,7 @@ impl SampleGen for App {
 pub fn midi_to_freq(midi_note: i16) -> f32 {
     let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
 
-    2.0_f32.powf(exp)
+    powf(2.0, exp)
 }
 
 pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
@@ -188,7 +190,7 @@ pub fn run_midi(
                     in_port,
                     "midir-read-input",
                     move |_stamp, message, _| {
-                        let message = MidiMessage::from(message);
+                        let message = midi_control::MidiMessage::from(message);
 
                         // do midi stuff
                         synth.lock().unwrap().midi_input(&message);
@@ -204,6 +206,8 @@ pub fn run_midi(
 
 #[cfg(feature = "desktop")]
 pub fn logger_init() -> Result<()> {
+    use fern::colors::{Color, ColoredLevelConfig};
+
     let colors = ColoredLevelConfig::new()
         .debug(Color::Blue)
         .info(Color::Green)

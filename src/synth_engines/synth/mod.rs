@@ -1,3 +1,5 @@
+use libm::sin;
+
 use crate::{config::OSC_WAVE_TABLE_SIZE, OscWaveTable};
 
 pub const N_OVERTONES_SAW: usize = 16;
@@ -13,9 +15,8 @@ pub fn build_sine_table(overtones: &[f64]) -> OscWaveTable {
 
     for i in 0..OSC_WAVE_TABLE_SIZE {
         for ot in overtones {
-            wave_table[i] += (2.0 * core::f64::consts::PI * i as f64 * ot
-                / OSC_WAVE_TABLE_SIZE as f64)
-                .sin() as f32
+            wave_table[i] +=
+                sin(2.0 * core::f64::consts::PI * i as f64 * ot / OSC_WAVE_TABLE_SIZE as f64) as f32
         }
 
         wave_table[i] *= bias;

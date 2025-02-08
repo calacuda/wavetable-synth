@@ -2,11 +2,11 @@ use crate::SampleGen;
 use chorus::Chorus;
 use core::fmt::{Debug, Display};
 use enum_dispatch::enum_dispatch;
-use reverb::Reverb;
+// use reverb::Reverb;
 use strum::EnumIter;
 
 pub mod chorus;
-pub mod reverb;
+// pub mod reverb;
 
 pub trait EffectParam: Debug + Clone + Display /* + TryFrom<f32> */ {}
 
@@ -24,7 +24,7 @@ pub trait Effect: Debug + SampleGen + Send {
 #[enum_dispatch]
 #[derive(Debug, Clone, EnumIter)]
 pub enum EffectsModule {
-    Reverb(Reverb),
+    // Reverb(Reverb),
     Chorus(Chorus),
 }
 

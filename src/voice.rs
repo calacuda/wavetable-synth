@@ -6,7 +6,7 @@ use crate::{
     calculate_modulation,
     common::{DataTable, LowPass as LP, ModMatrixDest},
     config::{N_ENV, N_LFO, N_OSC},
-    effects::{chorus::Chorus, reverb::Reverb, Effect, EffectsModule},
+    effects::{chorus::Chorus, /* reverb::Reverb, */ Effect, EffectsModule},
     lfo::LFO,
     midi_to_freq,
     synth_engines::{
@@ -46,7 +46,7 @@ pub struct Voice {
     /// what notes this voice is playing
     pub playing: Option<u8>,
     /// effects, holds the effect and if its one or not
-    effects: [(EffectsModule, bool); 2],
+    effects: [(EffectsModule, bool); 1],
     /// holds the out put of the different modules and also other needed data (velocity, and note).
     data_table: DataTable,
     /// describes how loud the synth is
@@ -59,7 +59,7 @@ impl Voice {
     pub fn new(wave_table: OscWaveTable) -> Self {
         let effects = [
             (EffectsModule::Chorus(Chorus::new()), false),
-            (EffectsModule::Reverb(Reverb::new()), false),
+            // (EffectsModule::Reverb(Reverb::new()), false),
         ];
         let lpf = LowPass::new();
         let mut oscs = array![(Oscillator::new(wave_table), false); N_OSC];

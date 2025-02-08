@@ -1,6 +1,7 @@
 use super::{Effect, EffectParam};
 use crate::{config::SAMPLE_RATE, SampleGen};
 use core::fmt::Display;
+use libm::tanhf;
 use strum::EnumIter;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
@@ -78,7 +79,7 @@ impl Chorus {
         // if echo == input_sample && input_sample != 0.0 {
         //     error!("[error] {}", self.i);
         // }
-        chorus.tanh()
+        tanhf(chorus)
     }
 
     /// sets speed, takes speed in seconds

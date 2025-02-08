@@ -1,5 +1,6 @@
 use crate::{calculate_modulation, common::LowPassParam, config::SAMPLE_RATE, ModulationDest};
 use core::f32::consts::PI;
+use libm::{expf, tanhf};
 
 // Moog filter from
 // https://github.com/ddiakopoulos/MoogLadders
@@ -54,7 +55,7 @@ impl HuovilainenMoog {
         let fcr = 1.8730 * fc3 + 0.4955 * fc2 - 0.6490 * fc + 0.9988;
         self.acr = -3.9364 * fc2 + 1.8409 * fc + 0.9968;
 
-        self.tune = (1.0 - (-((2.0 * PI) * f * fcr)).exp()) / THERMAL;
+        self.tune = expf(1.0 - (-((2.0 * PI) * f * fcr))) / THERMAL;
 
         self.res_quad = 4.0 * resonance * self.acr;
 
@@ -76,18 +77,18 @@ impl HuovilainenMoog {
         for _j in 0..2 {
             let input = in_sample - self.res_quad * self.delay[5];
             self.stage[0] =
-                self.delay[0] + self.tune * (tanh(input * THERMAL) - self.stage_tanh[0]);
+                self.delay[0] + self.tune * (tanhf(input * THERMAL) - self.stage_tanh[0]);
             self.delay[0] = self.stage[0];
             for k in 1..4 {
                 let input = self.stage[k - 1];
-                self.stage_tanh[k - 1] = tanh(input * THERMAL);
+                self.stage_tanh[k - 1] = tanhf(input * THERMAL);
                 self.stage[k] = self.delay[k]
                     + self.tune
                         * (self.stage_tanh[k - 1]
                             - (if k != 3 {
                                 self.stage_tanh[k]
                             } else {
-                                tanh(self.delay[k] * THERMAL)
+                                tanhf(self.delay[k] * THERMAL)
                             }));
                 self.delay[k] = self.stage[k];
             }
@@ -188,13 +189,13 @@ impl ModulationDest for LowPass {
     }
 }
 
-#[inline]
-fn tanh(x: f32) -> f32 {
-    let x2 = x * x;
-    let x3 = x2 * x;
-    let x5 = x3 * x2;
-
-    let a = x + (0.16489087 * x3) + (0.00985468 * x5);
-
-    a / (1.0 + (a * a)).sqrt()
-}
+// #[inline]
+// fn tanh(x: f32) -> f32 {
+//     let x2 = x * x;
+//     let x3 = x2 * x;
+//     let x5 = x3 * x2;
+//
+//     let a = x + (0.16489087 * x3) + (0.00985468 * x5);
+//
+//     a / (1.0 + (a * a)).sqrt()
+// }
