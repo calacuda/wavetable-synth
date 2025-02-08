@@ -1,8 +1,8 @@
 use super::{Effect, EffectParam};
-use crate::{HashMap, SampleGen};
+use crate::SampleGen;
+use core::fmt::Display;
 use reverb;
-use std::{fmt::Display, str::FromStr};
-use strum::{EnumIter, IntoEnumIterator};
+use strum::EnumIter;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum ReverbParam {
@@ -11,24 +11,25 @@ pub enum ReverbParam {
     Damping,
     Cutoff,
 }
-impl TryFrom<f32> for ReverbParam {
-    type Error = String;
 
-    fn try_from(value: f32) -> Result<Self, Self::Error> {
-        let value = value as usize;
-
-        Ok(match value {
-            _ if value == Self::Gain as usize => Self::Gain,
-            _ if value == Self::Decay as usize => Self::Decay,
-            _ if value == Self::Damping as usize => Self::Damping,
-            _ if value == Self::Cutoff as usize => Self::Cutoff,
-            _ => return Err(format!("{value} could not be turned into a reverb param")),
-        })
-    }
-}
+// impl TryFrom<f32> for ReverbParam {
+//     type Error = String;
+//
+//     fn try_from(value: f32) -> Result<Self, Self::Error> {
+//         let value = value as usize;
+//
+//         Ok(match value {
+//             _ if value == Self::Gain as usize => Self::Gain,
+//             _ if value == Self::Decay as usize => Self::Decay,
+//             _ if value == Self::Damping as usize => Self::Damping,
+//             _ if value == Self::Cutoff as usize => Self::Cutoff,
+//             _ => return Err(format!("{value} could not be turned into a reverb param")),
+//         })
+//     }
+// }
 
 impl Display for ReverbParam {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {
             Self::Gain => write!(f, "Gain"),
             Self::Decay => write!(f, "Decay"),
@@ -40,19 +41,19 @@ impl Display for ReverbParam {
 
 impl EffectParam for ReverbParam {}
 
-impl FromStr for ReverbParam {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "gain" => Ok(Self::Gain),
-            "decay" => Ok(Self::Decay),
-            "damping" => Ok(Self::Damping),
-            "cutoff" => Ok(Self::Cutoff),
-            _ => Err(format!("unknown reverb param {s}")),
-        }
-    }
-}
+// impl FromStr for ReverbParam {
+//     type Err = String;
+//
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         match s.to_lowercase().as_str() {
+//             "gain" => Ok(Self::Gain),
+//             "decay" => Ok(Self::Decay),
+//             "damping" => Ok(Self::Damping),
+//             "cutoff" => Ok(Self::Cutoff),
+//             _ => Err(format!("unknown reverb param {s}")),
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Reverb {
@@ -167,35 +168,35 @@ impl Effect for Reverb {
         self.in_sample = value;
     }
 
-    fn get_param_list(&self) -> Vec<String> {
-        ReverbParam::iter()
-            .map(|param| format!("{param}"))
-            .collect()
-    }
-
-    fn get_params(&self) -> crate::HashMap<String, f32> {
-        let mut map = HashMap::default();
-
-        map.insert("Gain".into(), self.gain);
-        map.insert("Decay".into(), self.decay);
-        map.insert("Damping".into(), self.damping);
-        map.insert("Cutoff".into(), self.cutoff);
-
-        map
-    }
-
-    fn set_param(&mut self, param: &str, to: f32) {
-        let Ok(param) = ReverbParam::from_str(param) else {
-            return;
-        };
-
-        match param {
-            ReverbParam::Gain => self.set_gain(to),
-            ReverbParam::Decay => self.set_decay(to),
-            ReverbParam::Cutoff => self.set_cutoff(to),
-            ReverbParam::Damping => self.set_damping(to),
-        }
-    }
+    // fn get_param_list(&self) -> Vec<String> {
+    //     ReverbParam::iter()
+    //         .map(|param| format!("{param}"))
+    //         .collect()
+    // }
+    //
+    // fn get_params(&self) -> crate::HashMap<String, f32> {
+    //     let mut map = HashMap::default();
+    //
+    //     map.insert("Gain".into(), self.gain);
+    //     map.insert("Decay".into(), self.decay);
+    //     map.insert("Damping".into(), self.damping);
+    //     map.insert("Cutoff".into(), self.cutoff);
+    //
+    //     map
+    // }
+    //
+    // fn set_param(&mut self, param: &str, to: f32) {
+    //     let Ok(param) = ReverbParam::from_str(param) else {
+    //         return;
+    //     };
+    //
+    //     match param {
+    //         ReverbParam::Gain => self.set_gain(to),
+    //         ReverbParam::Decay => self.set_decay(to),
+    //         ReverbParam::Cutoff => self.set_cutoff(to),
+    //         ReverbParam::Damping => self.set_damping(to),
+    //     }
+    // }
 
     // fn set_param(&mut self, param: Self::Param, to: f32) {
     //     match param {

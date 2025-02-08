@@ -1,7 +1,7 @@
 use super::{Effect, EffectParam};
-use crate::{config::SAMPLE_RATE, HashMap, SampleGen};
-use std::fmt::Display;
-use strum::{EnumIter, IntoEnumIterator};
+use crate::{config::SAMPLE_RATE, SampleGen};
+use core::fmt::Display;
+use strum::EnumIter;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum ChorusParam {
@@ -10,7 +10,7 @@ pub enum ChorusParam {
 }
 
 impl Display for ChorusParam {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {
             Self::Volume => write!(f, "Vol."),
             Self::Speed => write!(f, "Speed"),
@@ -18,19 +18,19 @@ impl Display for ChorusParam {
     }
 }
 
-impl TryFrom<f32> for ChorusParam {
-    type Error = String;
-
-    fn try_from(value: f32) -> Result<Self, Self::Error> {
-        let value = value as usize;
-
-        Ok(match value {
-            _ if value == Self::Volume as usize => Self::Volume,
-            _ if value == Self::Speed as usize => Self::Speed,
-            _ => return Err(format!("{value} could not be turned into a reverb param")),
-        })
-    }
-}
+// impl TryFrom<f32> for ChorusParam {
+//     type Error = String;
+//
+//     fn try_from(value: f32) -> Result<Self, Self::Error> {
+//         let value = value as usize;
+//
+//         Ok(match value {
+//             _ if value == Self::Volume as usize => Self::Volume,
+//             _ if value == Self::Speed as usize => Self::Speed,
+//             _ => return Err(format!("{value} could not be turned into a reverb param")),
+//         })
+//     }
+// }
 
 impl EffectParam for ChorusParam {}
 
@@ -111,21 +111,21 @@ impl Effect for Chorus {
         self.instert_i %= self.size;
     }
 
-    fn get_param_list(&self) -> Vec<String> {
-        ChorusParam::iter()
-            .map(|param| format!("{param}"))
-            .collect()
-    }
-
-    fn get_params(&self) -> crate::HashMap<String, f32> {
-        let map = HashMap::default();
-
-        // TODO: Write this
-
-        map
-    }
-
-    fn set_param(&mut self, _param: &str, _to: f32) {
-        // TODO: Write this
-    }
+    // fn get_param_list(&self) -> Vec<String> {
+    //     ChorusParam::iter()
+    //         .map(|param| format!("{param}"))
+    //         .collect()
+    // }
+    //
+    // fn get_params(&self) -> crate::HashMap<String, f32> {
+    //     let map = HashMap::default();
+    //
+    //     // TODO: Write this
+    //
+    //     map
+    // }
+    //
+    // fn set_param(&mut self, _param: &str, _to: f32) {
+    //     // TODO: Write this
+    // }
 }

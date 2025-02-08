@@ -9,8 +9,10 @@ default = ["desktop"]
 desktop = [
   # "dep:tinyaudio",
   "dep:midir",
+  "std",
 ]
 embeded = []
+std = []
 
 [dependencies]
 anyhow = { version = "1.0.95", features = ["backtrace"] }

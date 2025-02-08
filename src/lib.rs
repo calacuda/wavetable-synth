@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 #![feature(let_chains)]
 use anyhow::Result;
 use common::ModMatrixDest;
@@ -13,11 +14,6 @@ use fxhash::FxHashSet;
 use log::*;
 use midi_control::KeyEvent;
 use midi_control::MidiMessage;
-// use midir::MidiInput;
-// use midir::{Ignore, PortInfoError};
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex};
 use synth_engines::synth::build_sine_table;
 use synth_engines::synth::osc::N_OVERTONES;
 use voice::Voice;
@@ -40,7 +36,7 @@ pub trait MidiControlled {
     fn midi_input(&mut self, message: &MidiMessage);
 }
 
-#[enum_dispatch(EffectsModule, SynthModule)]
+#[enum_dispatch(EffectsModule)]
 pub trait SampleGen {
     fn get_sample(&mut self) -> f32;
 }
@@ -53,21 +49,25 @@ pub trait ModulationDest {
     fn reset(&mut self);
 }
 
+#[cfg(feature = "desktop")]
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct App {
     /// used to coordinate exits from run_midi function
-    exit: Arc<AtomicBool>,
+    exit: std::sync::Arc<std::sync::atomic::AtomicBool>,
     /// describes what modulates what.
     mod_matrix: ModMatrix,
     /// used for routung cc messages
     midi_table: [Option<ModMatrixDest>; 256],
     /// the sound producers
-    voices: Arc<[Mutex<Voice>]>,
+    voices: std::sync::Arc<[std::sync::Mutex<Voice>]>,
 }
 
+#[cfg(feature = "desktop")]
 impl Default for App {
     fn default() -> Self {
+        use std::sync::{Arc, Mutex};
+
         let mut overtones = [1.0; N_OVERTONES];
 
         (1..N_OVERTONES).for_each(|i| overtones[i] = (i + 1) as f64);
@@ -87,6 +87,7 @@ impl Default for App {
     }
 }
 
+#[cfg(feature = "desktop")]
 #[allow(unused_variables)]
 impl MidiControlled for App {
     fn midi_input(&mut self, message: &MidiMessage) {
@@ -118,6 +119,7 @@ impl MidiControlled for App {
     }
 }
 
+#[cfg(feature = "desktop")]
 impl SampleGen for App {
     fn get_sample(&mut self) -> f32 {
         let sample: f32 = self
@@ -143,7 +145,9 @@ pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
 }
 
 #[cfg(feature = "desktop")]
-pub fn run_midi(synth: Arc<Mutex<App>> /* , exit: Arc<AtomicBool> */) -> Result<()> {
+pub fn run_midi(
+    synth: std::sync::Arc<std::sync::Mutex<App>>, /* , exit: Arc<AtomicBool> */
+) -> Result<()> {
     use midir::{Ignore, MidiInput, PortInfoError};
 
     let mut registered_ports = HashMap::default();
@@ -152,7 +156,7 @@ pub fn run_midi(synth: Arc<Mutex<App>> /* , exit: Arc<AtomicBool> */) -> Result<
         app.exit.clone()
     };
 
-    while !exit.load(Ordering::Relaxed) {
+    while !exit.load(std::sync::atomic::Ordering::Relaxed) {
         let mut midi_in = MidiInput::new("midir reading input")?;
         midi_in.ignore(Ignore::None);
 
@@ -198,6 +202,7 @@ pub fn run_midi(synth: Arc<Mutex<App>> /* , exit: Arc<AtomicBool> */) -> Result<
     Ok(())
 }
 
+#[cfg(feature = "desktop")]
 pub fn logger_init() -> Result<()> {
     let colors = ColoredLevelConfig::new()
         .debug(Color::Blue)

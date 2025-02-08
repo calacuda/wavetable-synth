@@ -1,4 +1,4 @@
-use std::{cmp::min, ops::IndexMut};
+use core::{cmp::min, ops::IndexMut};
 
 use array_macro::array;
 

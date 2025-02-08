@@ -1,5 +1,5 @@
 use crate::{calculate_modulation, common::LowPassParam, config::SAMPLE_RATE, ModulationDest};
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 // Moog filter from
 // https://github.com/ddiakopoulos/MoogLadders
