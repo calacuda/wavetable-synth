@@ -1,7 +1,4 @@
-use log::warn;
-
 use crate::{calculate_modulation, common::LowPassParam, config::SAMPLE_RATE, ModulationDest};
-// use num_traits::clamp;
 use std::f32::consts::PI;
 
 // Moog filter from
