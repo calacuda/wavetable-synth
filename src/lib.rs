@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(let_chains)]
+#![feature(let_chains, stmt_expr_attributes)]
 use anyhow::Result;
 use common::ModMatrixDest;
 use common::ModMatrixItem;
@@ -8,10 +8,7 @@ use config::OSC_WAVE_TABLE_SIZE;
 use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
-use libm::powf;
 use log::*;
-// use midi_control::KeyEvent;
-// use midi_control::MidiMessage;
 use synth_engines::synth::build_sine_table;
 use synth_engines::synth::osc::N_OVERTONES;
 use voice::Voice;
@@ -19,7 +16,7 @@ use voice::Voice;
 #[cfg(feature = "desktop")]
 pub type HashMap<Key, Val> = fxhash::FxHashMap<Key, Val>;
 // pub type HashSet<T> = FxHashSet<T>;
-pub type ModMatrix = [Option<ModMatrixItem>; 256];
+pub type ModMatrix = [Option<ModMatrixItem>; 255];
 // pub type WaveTable = Arc<[f32]>;
 pub type OscWaveTable = [f32; OSC_WAVE_TABLE_SIZE];
 pub type LfoWaveTable = [f32; LFO_WAVE_TABLE_SIZE];
@@ -58,7 +55,7 @@ pub struct App {
     /// describes what modulates what.
     mod_matrix: ModMatrix,
     /// used for routung cc messages
-    midi_table: [Option<ModMatrixDest>; 256],
+    midi_table: [Option<ModMatrixDest>; 255],
     /// the sound producers
     voices: std::sync::Arc<[std::sync::Mutex<Voice>]>,
 }
@@ -80,8 +77,8 @@ impl Default for App {
 
         Self {
             exit: Arc::new(false.into()),
-            mod_matrix: [None; 256],
-            midi_table: [None; 256],
+            mod_matrix: [None; 255],
+            midi_table: [None; 255],
             voices,
         }
     }
@@ -101,7 +98,7 @@ impl MidiControlled for App {
                     let mut voice = voice.lock().unwrap();
 
                     if voice.playing.is_none() {
-                        // info!("playing note {key}");
+                        info!("playing note {key}");
                         voice.press(key, value);
                         break;
                     }
@@ -139,7 +136,7 @@ impl SampleGen for App {
 pub fn midi_to_freq(midi_note: i16) -> f32 {
     let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
 
-    powf(2.0, exp)
+    pow(2.0, exp)
 }
 
 pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
@@ -246,4 +243,72 @@ pub fn logger_init() -> Result<()> {
     info!("logger started");
 
     Ok(())
+}
+
+#[cfg(feature = "std")]
+#[inline]
+fn pow(base: f32, exp: f32) -> f32 {
+    base.powf(exp)
+}
+
+#[cfg(feature = "embeded")]
+#[inline]
+fn pow(base: f32, exp: f32) -> f32 {
+    use libm::powf;
+
+    powf(base, exp)
+}
+
+#[cfg(feature = "std")]
+#[inline]
+fn tanh(x: f32) -> f32 {
+    let x2 = x * x;
+    let x3 = x2 * x;
+    let x5 = x3 * x2;
+
+    let a = x + (0.16489087 * x3) + (0.00985468 * x5);
+
+    a / (1.0 + (a * a)).sqrt()
+}
+
+#[cfg(feature = "embeded")]
+#[inline]
+fn tanh(x: f32) -> f32 {
+    use libm::sqrtf;
+
+    let x2 = x * x;
+    let x3 = x2 * x;
+    let x5 = x3 * x2;
+
+    let a = x + (0.16489087 * x3) + (0.00985468 * x5);
+
+    a / sqrtf(1.0 + (a * a))
+}
+
+#[cfg(feature = "std")]
+#[inline]
+fn exp(x: f32) -> f32 {
+    x.exp()
+}
+
+#[cfg(feature = "embeded")]
+#[inline]
+fn exp(x: f32) -> f32 {
+    use libm::expf;
+
+    expf(x)
+}
+
+#[cfg(feature = "std")]
+#[inline]
+fn sin(x: f64) -> f64 {
+    x.sin()
+}
+
+#[cfg(feature = "embeded")]
+#[inline]
+fn sin(x: f64) -> f64 {
+    use libm::sin;
+
+    sin(x)
 }

@@ -1,7 +1,3 @@
-use core::{cmp::min, ops::IndexMut};
-
-use array_macro::array;
-
 use crate::{
     calculate_modulation,
     common::{DataTable, LowPass as LP, ModMatrixDest},
@@ -15,6 +11,11 @@ use crate::{
     },
     ModMatrix, ModulationDest, OscWaveTable, SampleGen,
 };
+use array_macro::array;
+use core::ops::IndexMut;
+use log::{info, warn};
+
+const U32: f32 = u32::MAX as f32 * 0.5;
 
 // #[macro_export]
 // macro_rules! array {
@@ -56,13 +57,60 @@ pub struct Voice {
 }
 
 impl Voice {
+    // #[cfg(not(feature = "embeded"))]
     pub fn new(wave_table: OscWaveTable) -> Self {
         let effects = [
             (EffectsModule::Chorus(Chorus::new()), false),
             // (EffectsModule::Reverb(Reverb::new()), false),
         ];
-        let lpf = LowPass::new();
+        // let lpf = LowPass::new();
         let mut oscs = array![(Oscillator::new(wave_table), false); N_OSC];
+        oscs[0].1 = true;
+        let targets = [
+            OscTarget::Filter1,
+            OscTarget::Filter2,
+            OscTarget::Filter1_2,
+            OscTarget::Effects,
+            OscTarget::DirectOut,
+            // OscTarget::DirectOut,
+            // OscTarget::DirectOut,
+            // OscTarget::DirectOut,
+            // OscTarget::DirectOut,
+        ];
+
+        for i in 0..N_OSC {
+            oscs.index_mut(i).0.target = targets[i];
+            // info!("{:?}", targets[i]);
+            info!("{:?}", oscs.index_mut(i).0.target);
+        }
+
+        // info!("{oscs:?}");
+
+        Self {
+            oscs,
+            envs: array![ADSR::new(); N_ENV],
+            lfos: array![LFO::new(); N_LFO],
+            filters: [LowPass::new(), LowPass::new()],
+            playing: None,
+            data_table: DataTable::default(),
+            effects,
+            level: 1.0,
+            level_mod: 0.0,
+        }
+    }
+
+    #[cfg(feature = "embeded")]
+    pub fn new_2(wave_table: OscWaveTable) -> Self {
+        let effects = [
+            (EffectsModule::Chorus(Chorus::new()), false),
+            // (EffectsModule::Reverb(Reverb::new()), false),
+        ];
+        // let lpf = LowPass::new();
+        let mut oscs = [
+            (Oscillator::new(wave_table), true),
+            // (Oscillator::new(wave_table), false),
+            // (Oscillator::new(wave_table), false),
+        ];
         oscs[0].1 = true;
         let targets = [
             OscTarget::Filter1,
@@ -72,15 +120,21 @@ impl Voice {
             OscTarget::DirectOut,
         ];
 
-        for i in 0..min(N_OSC, targets.len()) {
+        for i in 0..N_OSC {
             oscs.index_mut(i).0.target = targets[i];
         }
 
         Self {
             oscs,
-            envs: array![ADSR::new(); N_ENV],
-            lfos: array![LFO::new(); N_LFO],
-            filters: [lpf.clone(), lpf],
+            envs: [
+                ADSR::new(),
+                ADSR::new(),
+                ADSR::new(),
+                // ADSR::new(),
+                // ADSR::new(),
+            ],
+            lfos: [LFO::new() /* , LFO::new() */],
+            filters: [LowPass::new(), LowPass::new()],
             playing: None,
             data_table: DataTable::default(),
             effects,
@@ -213,63 +267,60 @@ impl Voice {
         let mut osc_sample = 0.0;
 
         for (i, (osc, on)) in self.oscs.iter_mut().enumerate() {
-            if !*on {
-                continue;
-            }
+            if *on {
+                // continue;
 
-            let sample = osc.get_sample();
+                let sample = osc.get_sample();
 
-            self.data_table.osc[i] = sample;
+                self.data_table.osc[i] = sample;
 
-            osc_sample += match osc.target {
-                OscTarget::Filter1 => self.filters[0].get_sample(sample),
-                OscTarget::Filter2 => self.filters[1].get_sample(sample),
-                OscTarget::Filter1_2 => {
-                    self.filters[0].get_sample(sample) + self.filters[1].get_sample(sample)
-                }
-                OscTarget::Effects => sample,
-                OscTarget::DirectOut => {
-                    output += sample;
-                    // if let Some(s) = output.as_mut() {
-                    //     *s += sample
-                    // } else {
-                    //     output = Some(sample);
-                    // }
+                // osc_sample += // self.filters[0].get_sample(sample);
+                osc_sample += match osc.target {
+                    OscTarget::Filter1 => self.filters[0].get_sample(sample),
+                    OscTarget::Filter2 => self.filters[1].get_sample(sample),
+                    OscTarget::Filter1_2 => {
+                        self.filters[0].get_sample(sample) + self.filters[1].get_sample(sample)
+                    }
+                    OscTarget::Effects => sample,
+                    OscTarget::DirectOut => {
+                        output += sample;
 
-                    continue;
-                }
+                        continue;
+                    }
+                };
             }
         }
 
         let mut effects_sample = osc_sample;
 
         for (effect, on) in self.effects.iter_mut() {
-            // if let Some((effect, on)) = effect {
             if *on {
-                // let s = if let Some(sample) = effects_sample {
-                //     sample
-                // } else {
-                //     osc_sample
-                // };
-
                 effect.take_input(effects_sample);
 
                 effects_sample += effect.get_sample();
             }
         }
 
-        // if let Some(sample) = effects_sample {
-        //     output += sample;
-        // }
         output += effects_sample;
-        // info!("output = {output}");
-        // info!("env = {}", self.data_table.env[0]);
-        // info!(
-        //     "self.mod_level {}",
-        //     calculate_modulation(self.level, self.level_mod)
-        // );
 
         // TODO: add an allpass filter.
-        Some(output * self.data_table.env[0] * calculate_modulation(self.level, self.level_mod))
+        let sample =
+            output * self.data_table.env[0] * calculate_modulation(self.level, self.level_mod);
+        // warn!("{}", get_u32_sample(Some(sample)));
+
+        Some(sample)
     }
+}
+
+pub fn get_u32_sample(sample: Option<f32>) -> u32 {
+    let sample = sample.unwrap();
+    warn!("{sample}");
+    // let sample = (u32::MAX as f64 * (sample * 0.5 + 0.5)).round() as u32;
+    // warn!("{sample}");
+
+    // sample
+    let normalized = (sample + 1.0) * U32;
+    let converted = normalized as u32;
+
+    converted
 }

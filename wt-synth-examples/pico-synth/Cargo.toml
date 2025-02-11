@@ -9,8 +9,10 @@ runner = "probe-run --chip RP2040"
 [dependencies]
 cortex-m = "0.7.7"
 cortex-m-rt = "0.7.5"
+defmt = "0.3.10"
 embedded-alloc = "0.6.0"
 embedded-hal = "1.0.0"
+fugit = "0.3.7"
 midi-msg = { version = "0.8.0", default-features = false }
 panic-halt = "1.0.0"
 pio = "0.2.1"

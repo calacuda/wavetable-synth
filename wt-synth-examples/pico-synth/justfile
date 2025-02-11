@@ -1,6 +1,12 @@
 _:
   just -l
 
+_edit-pio-file fname:
+  nvim "+setfiletype asm" {{fname}}
+
+edit-i2s-pio:
+  @just _edit-pio-file ./src/i2s.pio
+
 _new-window NAME CMD:
   tmux new-w -t pico-synth -n "{{NAME}}"
   tmux send-keys -t pico-synth:"{{NAME}}" "{{CMD}}" ENTER

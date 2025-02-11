@@ -1,6 +1,4 @@
-use libm::sin;
-
-use crate::{config::OSC_WAVE_TABLE_SIZE, OscWaveTable};
+use crate::{config::OSC_WAVE_TABLE_SIZE, sin, OscWaveTable};
 
 pub const N_OVERTONES_SAW: usize = 16;
 

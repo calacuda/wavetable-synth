@@ -1,11 +1,11 @@
-use libm::powf;
-
 use crate::{
     calculate_modulation,
     common::OscParam,
     config::{OSC_WAVE_TABLE_SIZE, SAMPLE_RATE},
-    midi_to_freq, ModulationDest, OscWaveTable, SampleGen,
+    midi_to_freq, pow, ModulationDest, OscWaveTable, SampleGen,
 };
+// use libm::powf;
+use log::warn;
 
 pub const N_OVERTONES: usize = 32;
 
@@ -88,7 +88,7 @@ impl Oscillator {
             detune: 0.0,
             detune_mod: 0.0,
             offset: 0,
-            target: OscTarget::Filter1,
+            target: OscTarget::Filter1_2,
             wave_table,
         }
     }
@@ -97,6 +97,7 @@ impl Oscillator {
         let note = midi_note as i16 + self.offset;
 
         self.frequency = midi_to_freq(note);
+        warn!("midi note: {note}|{midi_note} => {}", self.frequency);
         self.base_frequency = self.frequency;
 
         self.osc.set_frequency(self.frequency);
@@ -115,6 +116,10 @@ impl Oscillator {
 
     pub fn detune(&mut self) {
         // println!("bending");
+        if self.detune == 0.0 && self.detune_mod == 0.0 {
+            return;
+        }
+
         let amt = calculate_modulation(self.detune, self.detune_mod);
 
         if amt == 0.0 {
@@ -122,7 +127,7 @@ impl Oscillator {
         };
 
         // let nudge = 2.0_f32.powf(amt / 12.0);
-        let nudge = powf(2.0, amt / 12.0);
+        let nudge = pow(2.0, amt / 12.0);
         let new_freq = if amt < 0.0 {
             self.frequency / nudge
         } else if amt > 0.0 {
@@ -140,7 +145,7 @@ impl Oscillator {
     pub fn bend(&mut self, bend: f32) {
         // println!("bending");
         // let nudge = 2.0_f32.powf((bend * 3.0) / 12.0);
-        let nudge = powf(2.0, (bend * 3.0) / 12.0);
+        let nudge = pow(2.0, (bend * 3.0) / 12.0);
         let new_freq = if bend < 0.0 {
             self.base_frequency / nudge
         } else if bend > 0.0 {
