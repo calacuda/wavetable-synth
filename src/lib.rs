@@ -133,6 +133,31 @@ impl SampleGen for App {
     }
 }
 
+#[cfg(feature = "desktop")]
+impl App {
+    pub fn play(&mut self, note: midi_control::MidiNote, velocity: u8) {
+        for voice in self.voices.iter() {
+            let mut voice = voice.lock().unwrap();
+
+            if voice.playing.is_none() {
+                // info!("playing note {note}");
+                voice.press(note, velocity);
+                break;
+            }
+        }
+    }
+
+    pub fn stop(&mut self, note: midi_control::MidiNote) {
+        for voice in self.voices.iter() {
+            let mut voice = voice.lock().unwrap();
+
+            if voice.playing.is_some_and(|n| n == note) {
+                voice.release();
+            }
+        }
+    }
+}
+
 pub fn midi_to_freq(midi_note: i16) -> f32 {
     let exp = (f32::from(midi_note) + 36.376_316) / 12.0;
 
