@@ -48,7 +48,7 @@ pub trait ModulationDest {
 
 #[cfg(feature = "desktop")]
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct App {
     /// used to coordinate exits from run_midi function
     exit: std::sync::Arc<std::sync::atomic::AtomicBool>,
