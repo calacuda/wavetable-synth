@@ -42,7 +42,7 @@ pub trait ModulationDest {
     type ModTarget;
 
     fn modulate(&mut self, what: Self::ModTarget, by: f32);
-    /// clears any aplied modulation.
+    /// clears any applied modulation.
     fn reset(&mut self);
 }
 
