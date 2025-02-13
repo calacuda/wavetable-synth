@@ -53,11 +53,11 @@ pub struct App {
     /// used to coordinate exits from run_midi function
     exit: std::sync::Arc<std::sync::atomic::AtomicBool>,
     /// describes what modulates what.
-    mod_matrix: ModMatrix,
+    pub mod_matrix: ModMatrix,
     /// used for routung cc messages
-    midi_table: [Option<ModMatrixDest>; 255],
+    pub midi_table: [Option<ModMatrixDest>; 255],
     /// the sound producers
-    voices: std::sync::Arc<[std::sync::Mutex<Voice>]>,
+    pub voices: std::sync::Arc<[std::sync::Mutex<Voice>]>,
 }
 
 #[cfg(feature = "desktop")]
