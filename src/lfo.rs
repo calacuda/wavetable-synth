@@ -5,7 +5,7 @@ use crate::{
     LfoWaveTable, ModulationDest, SampleGen,
 };
 
-/// the WaveTable oscilator that is used for generating LFO samples
+/// the WaveTable oscillator that is used for generating LFO samples
 #[derive(Clone, Debug)]
 pub struct LfoWaveTableOsc {
     sample_rate: f32,
@@ -70,7 +70,7 @@ impl LfoWaveTableOsc {
 #[derive(Clone, Debug)]
 pub struct LFO {
     /// can be modulated by envelopes, lfos, velocity, etc
-    freq: f32,
+    pub freq: f32,
     speed_mod: f32,
     wave_table: LfoWaveTable,
     pub osc: LfoWaveTableOsc,
