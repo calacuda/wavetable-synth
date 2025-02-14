@@ -37,21 +37,21 @@ const U32: f32 = u32::MAX as f32 * 0.5;
 #[derive(Clone, Debug)]
 pub struct Voice {
     /// Oscilators holds the osc and if its playing
-    oscs: [(Oscillator, bool); N_OSC],
+    pub oscs: [(Oscillator, bool); N_OSC],
     /// env filters
-    envs: [ADSR; N_ENV],
+    pub envs: [ADSR; N_ENV],
     /// LFOs
-    lfos: [LFO; N_LFO],
+    pub lfos: [LFO; N_LFO],
     /// filters
-    filters: [LowPass; 2],
+    pub filters: [LowPass; 2],
     /// what notes this voice is playing
     pub playing: Option<u8>,
     /// effects, holds the effect and if its one or not
-    effects: [(EffectsModule, bool); 1],
+    pub effects: [(EffectsModule, bool); 1],
     /// holds the out put of the different modules and also other needed data (velocity, and note).
     data_table: DataTable,
     /// describes how loud the synth is
-    level: f32,
+    pub level: f32,
     /// stores the modulation amount for level
     level_mod: f32,
 }
