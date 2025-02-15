@@ -97,7 +97,7 @@ impl Oscillator {
         let note = midi_note as i16 + self.offset;
 
         self.frequency = midi_to_freq(note);
-        warn!("midi note: {note}|{midi_note} => {}", self.frequency);
+        // warn!("midi note: {note}|{midi_note} => {}", self.frequency);
         self.base_frequency = self.frequency;
 
         self.osc.set_frequency(self.frequency);
