@@ -188,7 +188,8 @@ impl ModulationDest for Oscillator {
     }
 
     fn reset(&mut self) {
-        info!("resseting");
+        // info!("resseting");
+        info!("{}", self.level_mod);
         self.level_mod = 0.0;
         self.detune_mod = 0.0;
     }
