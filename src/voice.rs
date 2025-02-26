@@ -202,7 +202,7 @@ impl Voice {
                 // get mod amount
                 let mut amt = self.data_table.get_entry(&entry.src) * entry.amt;
 
-                // info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
+                info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
 
                 if entry.bipolar {
                     amt -= entry.amt / 2.0;
