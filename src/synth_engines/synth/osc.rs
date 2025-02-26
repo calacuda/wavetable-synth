@@ -5,7 +5,7 @@ use crate::{
     midi_to_freq, pow, ModulationDest, OscWaveTable, SampleGen,
 };
 // use libm::powf;
-use log::warn;
+use log::{info, warn};
 
 pub const N_OVERTONES: usize = 32;
 
