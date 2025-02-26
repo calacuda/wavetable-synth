@@ -208,7 +208,7 @@ impl Voice {
                     amt -= entry.amt / 2.0;
                 }
 
-                info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
+                // info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
 
                 match entry.dest {
                     ModMatrixDest::ModMatrixEntryModAmt(mod_amt_amt) => {
