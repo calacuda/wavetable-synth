@@ -217,9 +217,9 @@ impl Voice {
                     ModMatrixDest::Osc { osc, param } => {
                         let (osc, on) = &mut self.oscs[osc];
 
-                        // if *on {
-                        osc.modulate(param, amt);
-                        // }
+                        if *on {
+                            osc.modulate(param, amt);
+                        }
                     }
                     ModMatrixDest::Env { env, param } => self.envs[env].modulate(param, amt),
                     ModMatrixDest::Lfo { lfo, param } => self.lfos[lfo].modulate(param, amt),
