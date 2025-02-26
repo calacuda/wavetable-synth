@@ -112,8 +112,9 @@ impl Oscillator {
         self.detune();
 
         info!(
-            "modulated volume {}",
-            calculate_modulation(self.level, self.level_mod)
+            "modulated volume {}, {}",
+            calculate_modulation(self.level, self.level_mod),
+            self.level_mod,
         );
 
         self.osc.get_sample(&self.wave_table) * calculate_modulation(self.level, self.level_mod)
