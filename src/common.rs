@@ -27,7 +27,7 @@ pub struct DataTable {
 impl DataTable {
     pub fn get_entry(&self, src: &ModMatrixSrc) -> f32 {
         match src {
-            ModMatrixSrc::Velocity => self.note.map(|vel| vel as f32 / 255.0).unwrap_or(0.0),
+            ModMatrixSrc::Velocity => self.note.map(|vel| vel as f32 / 127.0).unwrap_or(0.0),
             ModMatrixSrc::Gate => {
                 if self.note.is_some() {
                     1.0
