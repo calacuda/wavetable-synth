@@ -117,7 +117,8 @@ impl Oscillator {
         //     self.level_mod,
         // );
 
-        self.osc.get_sample(&self.wave_table) * calculate_modulation(self.level, self.level_mod)
+        self.osc.get_sample(&self.wave_table)
+            * calculate_modulation(self.level, self.level_mod).tanh()
     }
 
     pub fn detune(&mut self) {
@@ -190,11 +191,11 @@ impl ModulationDest for Oscillator {
     fn reset(&mut self) {
         // info!("resseting");
         // info!("{}", self.level_mod);
-        info!(
-            "modulated volume {}, {}",
-            calculate_modulation(self.level, self.level_mod),
-            self.level_mod,
-        );
+        // info!(
+        //     "modulated volume {}, {}",
+        //     calculate_modulation(self.level, self.level_mod),
+        //     self.level_mod,
+        // );
 
         self.level_mod = 0.0;
         self.detune_mod = 0.0;
