@@ -111,11 +111,11 @@ impl Oscillator {
         // }
         self.detune();
 
-        info!(
-            "modulated volume {}, {}",
-            calculate_modulation(self.level, self.level_mod),
-            self.level_mod,
-        );
+        // info!(
+        //     "modulated volume {}, {}",
+        //     calculate_modulation(self.level, self.level_mod),
+        //     self.level_mod,
+        // );
 
         self.osc.get_sample(&self.wave_table) * calculate_modulation(self.level, self.level_mod)
     }
@@ -177,14 +177,14 @@ impl ModulationDest for Oscillator {
     type ModTarget = OscParam;
 
     fn modulate(&mut self, what: Self::ModTarget, by: f32) {
-        info!("modulating {what:?} by {by}");
+        // info!("modulating {what:?} by {by}");
 
         match what {
             Self::ModTarget::Level => self.level_mod = by,
             Self::ModTarget::Tune => self.detune_mod = by,
         }
 
-        info!("{}", self.level_mod);
+        // info!("{}", self.level_mod);
     }
 
     fn reset(&mut self) {
