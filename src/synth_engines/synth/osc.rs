@@ -185,7 +185,7 @@ impl ModulationDest for Oscillator {
             Self::ModTarget::Tune => self.detune_mod = by,
         }
 
-        info!("{self:?}");
+        info!("{}", self.level_mod);
     }
 
     fn reset(&mut self) {
