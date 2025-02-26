@@ -197,12 +197,14 @@ impl Voice {
 
     /// send data from data_table where ever it needs to go, based on the mod_natrix
     pub fn route_mod_matrix(&mut self, mod_matrix: &ModMatrix) {
+        info!("{}", self.data_table.velocity);
+
         for mod_entry in mod_matrix {
             if let Some(entry) = mod_entry {
                 // get mod amount
                 let mut amt = self.data_table.get_entry(&entry.src) * entry.amt;
 
-                info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
+                // info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
 
                 if entry.bipolar {
                     amt -= entry.amt / 2.0;
