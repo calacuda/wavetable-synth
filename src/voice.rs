@@ -201,6 +201,8 @@ impl Voice {
                 // get mod amount
                 let mut amt = self.data_table.get_entry(&entry.src) * entry.amt;
 
+                info!("src {}, amt {}, dest {}", entry.src, amt, entry.dest);
+
                 if entry.bipolar {
                     amt -= entry.amt / 2.0;
                 }
@@ -212,9 +214,9 @@ impl Voice {
                     ModMatrixDest::Osc { osc, param } => {
                         let (osc, on) = &mut self.oscs[osc];
 
-                        // if *on {
-                        osc.modulate(param, amt);
-                        // }
+                        if *on {
+                            osc.modulate(param, amt);
+                        }
                     }
                     ModMatrixDest::Env { env, param } => self.envs[env].modulate(param, amt),
                     ModMatrixDest::Lfo { lfo, param } => self.lfos[lfo].modulate(param, amt),
