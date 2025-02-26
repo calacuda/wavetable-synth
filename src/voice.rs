@@ -144,6 +144,7 @@ impl Voice {
     }
 
     pub fn press(&mut self, midi_note: u8, velocity: u8) {
+        info!("velocity => {velocity}");
         self.oscs.iter_mut().for_each(|osc| {
             if osc.1 {
                 osc.0.press(midi_note)
