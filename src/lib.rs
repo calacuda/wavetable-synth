@@ -129,7 +129,7 @@ impl SampleGen for App {
 
         // TODO: add an AllPass filter
 
-        sample.tanh()
+        sample
     }
 }
 
