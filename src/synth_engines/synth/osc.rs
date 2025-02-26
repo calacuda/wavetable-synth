@@ -177,7 +177,7 @@ impl ModulationDest for Oscillator {
     type ModTarget = OscParam;
 
     fn modulate(&mut self, what: Self::ModTarget, by: f32) {
-        // info!("modulating {what:?} by {by}");
+        info!("modulating {what:?} by {by}");
 
         match what {
             Self::ModTarget::Level => self.level_mod = by,
@@ -186,6 +186,7 @@ impl ModulationDest for Oscillator {
     }
 
     fn reset(&mut self) {
+        info!("resseting");
         self.level_mod = 0.0;
         self.detune_mod = 0.0;
     }
