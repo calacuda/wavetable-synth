@@ -177,7 +177,7 @@ impl Voice {
         // self.lfos.iter_mut().for_each(|lfo| lfo.start());
     }
 
-    /// ressets the mod matrix along with the effects, lfos, oscilators, etc
+    /// resets the mod matrix along with the effects, lfos, oscilators, etc
     pub fn reset(&mut self) {
         // self.lfos.iter_mut().for_each(|lfo| lfo.index);
         self.oscs.iter_mut().for_each(|(osc, on)| {
@@ -212,9 +212,9 @@ impl Voice {
                     ModMatrixDest::Osc { osc, param } => {
                         let (osc, on) = &mut self.oscs[osc];
 
-                        if *on {
-                            osc.modulate(param, amt);
-                        }
+                        // if *on {
+                        osc.modulate(param, amt);
+                        // }
                     }
                     ModMatrixDest::Env { env, param } => self.envs[env].modulate(param, amt),
                     ModMatrixDest::Lfo { lfo, param } => self.lfos[lfo].modulate(param, amt),
