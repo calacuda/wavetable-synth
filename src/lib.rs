@@ -1,5 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(let_chains, stmt_expr_attributes)]
+#[cfg(feature = "embeded")]
+extern crate alloc;
+#[cfg(feature = "embeded")]
+use alloc::vec::Vec;
 use anyhow::Result;
 use common::ModMatrixDest;
 use common::ModMatrixItem;
@@ -9,6 +13,8 @@ use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
 use log::*;
+#[cfg(feature = "desktop")]
+use std::sync::Arc;
 use synth_engines::synth::build_sine_table;
 use synth_engines::synth::osc::N_OVERTONES;
 use voice::Voice;
@@ -16,10 +22,14 @@ use voice::Voice;
 #[cfg(feature = "desktop")]
 pub type HashMap<Key, Val> = fxhash::FxHashMap<Key, Val>;
 // pub type HashSet<T> = FxHashSet<T>;
-pub type ModMatrix = [Option<ModMatrixItem>; 255];
+pub type ModMatrix = [Option<ModMatrixItem>; 256];
 // pub type WaveTable = Arc<[f32]>;
-pub type OscWaveTable = [f32; OSC_WAVE_TABLE_SIZE];
-pub type LfoWaveTable = [f32; LFO_WAVE_TABLE_SIZE];
+// pub type OscWaveTable = [f32; OSC_WAVE_TABLE_SIZE];
+// pub type OscWaveTable = Arc<[f32]>;
+pub type OscWaveTable = Vec<f32>;
+// pub type LfoWaveTable = [f32; LFO_WAVE_TABLE_SIZE];
+// pub type LfoWaveTable = Arc<[f32]>;
+pub type LfoWaveTable = Vec<f32>;
 
 pub mod common;
 pub mod config;

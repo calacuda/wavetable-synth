@@ -2,7 +2,7 @@ use crate::{
     calculate_modulation,
     common::OscParam,
     config::{OSC_WAVE_TABLE_SIZE, SAMPLE_RATE},
-    midi_to_freq, pow, ModulationDest, OscWaveTable, SampleGen,
+    midi_to_freq, pow, tanh, ModulationDest, OscWaveTable, SampleGen,
 };
 // use libm::powf;
 use log::{info, warn};
@@ -117,8 +117,10 @@ impl Oscillator {
         //     self.level_mod,
         // );
 
-        self.osc.get_sample(&self.wave_table)
-            * calculate_modulation(self.level, self.level_mod).tanh()
+        tanh(
+            self.osc.get_sample(&self.wave_table)
+                * calculate_modulation(self.level, self.level_mod),
+        )
     }
 
     pub fn detune(&mut self) {
