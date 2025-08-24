@@ -1,0 +1,28 @@
+[package]
+name = "pico-synth"
+version = "0.1.0"
+edition = "2024"
+
+[target.thumbv6m-none-eabi]
+runner = "probe-run --chip RP2040"
+
+[dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.5"
+defmt = "1.0"
+defmt-rtt = "1.0"
+embedded-alloc = "0.6.0"
+embedded-hal = "1.0.0"
+fugit = "0.3.7"
+midi-msg = { version = "0.8.0", default-features = false }
+panic-halt = "1.0.0"
+pio = "0.2.1"
+pio-proc = "0.2.2"
+rp-binary-info = "0.1.1"
+rp235x-hal = { version = "0.3.0", features = ["rt", "defmt", "critical-section-impl", "binary-info"] }
+rp235x-pac = { version = "0.1.0", features = ["rt", "critical-section"] }
+usb-device = "0.3.2"
+usbd-hid = "0.8.2"
+usbd-serial = "0.2.2"
+# rp-pico = "0.9.0"
+wavetable-synth = { version = "0.1.0", path = "../..", features = ["embeded"], default-features = false }

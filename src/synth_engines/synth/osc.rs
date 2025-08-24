@@ -7,7 +7,7 @@ use crate::{
 // use libm::powf;
 use log::{info, warn};
 
-pub const N_OVERTONES: usize = 32;
+pub const N_OVERTONES: usize = 8;
 
 #[derive(Clone, Copy, Debug)]
 pub enum OscTarget {

@@ -1,21 +1,24 @@
+#[cfg(feature = "embeded")]
+use crate::alloc::borrow::ToOwned;
 use crate::{
     calculate_modulation,
-    common::{DataTable, LowPass as LP, ModMatrixDest},
-    config::{N_ENV, N_LFO, N_OSC},
+    common::{DataTable, ModMatrixDest},
+    config::{N_ENV, N_LFO, N_OSC, SAMPLE_RATE},
     effects::{chorus::Chorus, /* reverb::Reverb, */ Effect, EffectsModule},
     lfo::LFO,
     midi_to_freq,
     synth_engines::{
         synth::osc::{OscTarget, Oscillator},
-        synth_common::{env::ADSR, moog_filter::LowPass},
+        synth_common::{biquad_filter::BQLowPass, env::ADSR, moog_filter::LowPass},
     },
     ModMatrix, ModulationDest, OscWaveTable, SampleGen,
 };
 use array_macro::array;
+use biquad::{Biquad, Coefficients, DirectForm1, ToHertz, Q_BUTTERWORTH_F32};
 use core::ops::IndexMut;
 use log::{info, warn};
 
-const U32: f32 = u32::MAX as f32 * 0.5;
+// const U32: f32 = u32::MAX as f32 * 0.5;
 
 // #[macro_export]
 // macro_rules! array {
@@ -44,6 +47,7 @@ pub struct Voice {
     pub lfos: [LFO; N_LFO],
     /// filters
     pub filters: [LowPass; 2],
+    // pub filters: [BQLowPass; 2],
     /// what notes this voice is playing
     pub playing: Option<u8>,
     /// effects, holds the effect and if its one or not
@@ -54,10 +58,12 @@ pub struct Voice {
     pub level: f32,
     /// stores the modulation amount for level
     level_mod: f32,
+    ///
+    all_pass: DirectForm1<f32>,
 }
 
 impl Voice {
-    // #[cfg(not(feature = "embeded"))]
+    #[cfg(not(feature = "embeded"))]
     pub fn new(wave_table: OscWaveTable) -> Self {
         let effects = [
             (EffectsModule::Chorus(Chorus::new()), false),
@@ -83,19 +89,28 @@ impl Voice {
             // info!("{:?}", targets[i]);
             info!("{:?}", oscs.index_mut(i).0.target);
         }
+        let f0 = 440.hz();
+        let fs = SAMPLE_RATE.hz();
 
         // info!("{oscs:?}");
+        let coeffs =
+            Coefficients::<f32>::from_params(biquad::Type::AllPass, fs, f0, Q_BUTTERWORTH_F32)
+                .unwrap();
+
+        let filter = DirectForm1::<f32>::new(coeffs);
 
         Self {
             oscs,
             envs: array![ADSR::new(); N_ENV],
             lfos: array![LFO::new(); N_LFO],
+            // filters: [LowPass::new(), LowPass::new()],
             filters: [LowPass::new(), LowPass::new()],
             playing: None,
             data_table: DataTable::default(),
             effects,
             level: 1.0,
             level_mod: 0.0,
+            all_pass: filter,
         }
     }
 
@@ -107,12 +122,16 @@ impl Voice {
         ];
         // let lpf = LowPass::new();
         let mut oscs = [
-            (Oscillator::new(wave_table), true),
-            // (Oscillator::new(wave_table), false),
+            (Oscillator::new(wave_table.clone()), true),
+            (Oscillator::new(wave_table.clone()), true),
             // (Oscillator::new(wave_table), false),
         ];
-        oscs[0].1 = true;
+        // oscs[0].1 = true;
+        oscs[0].0.level = 0.75;
+        oscs[1].0.offset = -12;
+        oscs[1].0.level = 0.25;
         let targets = [
+            // OscTarget::Effects,
             OscTarget::Filter1,
             OscTarget::Filter2,
             OscTarget::Filter1_2,
@@ -124,22 +143,39 @@ impl Voice {
             oscs.index_mut(i).0.target = targets[i];
         }
 
+        let mut lfo = LFO::new();
+        lfo.set_frequency(2.0);
+        let mut lfo_2 = LFO::new();
+        lfo.set_frequency(4.0);
+
+        let f0 = 440.hz();
+        let fs = SAMPLE_RATE.hz();
+
+        // info!("{oscs:?}");
+        let coeffs =
+            Coefficients::<f32>::from_params(biquad::Type::AllPass, fs, f0, Q_BUTTERWORTH_F32)
+                .unwrap();
+
+        let filter = DirectForm1::<f32>::new(coeffs);
+
         Self {
             oscs,
             envs: [
                 ADSR::new(),
                 ADSR::new(),
-                ADSR::new(),
+                // ADSR::new(),
                 // ADSR::new(),
                 // ADSR::new(),
             ],
-            lfos: [LFO::new() /* , LFO::new() */],
+            lfos: [lfo, lfo_2],
             filters: [LowPass::new(), LowPass::new()],
+            // filters: [BQLowPass::new(), BQLowPass::new()],
             playing: None,
             data_table: DataTable::default(),
             effects,
             level: 1.0,
             level_mod: 0.0,
+            all_pass: filter,
         }
     }
 
@@ -175,7 +211,8 @@ impl Voice {
         //         filter.set_note(midi_to_freq(midi_note));
         //     }
         // });
-        // self.lfos.iter_mut().for_each(|lfo| lfo.start());
+        self.lfos.iter_mut().for_each(|lfo| lfo.release());
+        self.playing = None;
     }
 
     /// resets the mod matrix along with the effects, lfos, oscilators, etc
@@ -199,7 +236,8 @@ impl Voice {
     pub fn route_mod_matrix(&mut self, mod_matrix: &ModMatrix) {
         // info!("{:?}", self.data_table.velocity);
 
-        for mod_entry in mod_matrix {
+        // for mod_entry in mod_matrix {
+        mod_matrix.iter().for_each(|mod_entry| {
             if let Some(entry) = mod_entry {
                 // get mod amount
                 let mut amt = self.data_table.get_entry(&entry.src) * entry.amt;
@@ -223,14 +261,22 @@ impl Voice {
                     }
                     ModMatrixDest::Env { env, param } => self.envs[env].modulate(param, amt),
                     ModMatrixDest::Lfo { lfo, param } => self.lfos[lfo].modulate(param, amt),
-                    ModMatrixDest::LowPass { low_pass, param } => match low_pass {
-                        LP::LP1 => self.filters[0].modulate(param, amt),
-                        LP::LP2 => self.filters[1].modulate(param, amt),
-                    },
+                    ModMatrixDest::LowPass { low_pass, param } => {
+                        let i = match low_pass {
+                            crate::common::LowPass::LP1 => 0,
+                            crate::common::LowPass::LP2 => 1,
+                        };
+
+                        self.filters[i].modulate(param, amt)
+                    }
+                    // ModMatrixDest::LowPass { low_pass, param } => match low_pass {
+                    //     LP::LP1 => self.filters[0].modulate(param, amt),
+                    //     LP::LP2 => self.filters[1].modulate(param, amt),
+                    // },
                     ModMatrixDest::SynthVolume => self.modulate_level(amt),
                 };
             }
-        }
+        });
         // for (osc, on) in self.oscs.iter_mut() {
         //     if on {
         //         osc.mod
@@ -242,9 +288,9 @@ impl Voice {
         self.level_mod = amt;
     }
 
-    pub fn get_sample(&mut self, mod_matrix: &ModMatrix) -> Option<f32> {
+    pub fn get_sample(&mut self, mod_matrix: &ModMatrix) -> f32 {
         if self.playing.is_none() {
-            return None;
+            return 0.0;
         }
 
         self.route_mod_matrix(mod_matrix);
@@ -253,6 +299,7 @@ impl Voice {
         for (i, env) in self.envs.iter_mut().enumerate() {
             let sample = env.get_samnple();
             self.data_table.env[i] = sample;
+            break;
         }
 
         // calculate lfos
@@ -264,20 +311,24 @@ impl Voice {
         if !self.envs[0].pressed() && self.data_table.env[0] <= 0.0 {
             self.playing = None;
             self.reset();
-            return None;
+            return 0.0;
         }
 
         let mut output = 0.0;
 
         let mut osc_sample = 0.0;
 
-        for (i, (osc, on)) in self.oscs.iter_mut().enumerate() {
-            if *on {
+        for (osc, on) in self.oscs.iter_mut() {
+            // output += osc.get_sample();
+            // output += self.filters[0].get_sample(osc.get_sample());
+            // break;
+            if on.to_owned() {
                 // continue;
 
                 let sample = osc.get_sample();
+                // continue;
 
-                self.data_table.osc[i] = sample;
+                // self.data_table.osc[i] = sample;
 
                 // osc_sample += // self.filters[0].get_sample(sample);
                 osc_sample += match osc.target {
@@ -288,6 +339,7 @@ impl Voice {
                     }
                     OscTarget::Effects => sample,
                     OscTarget::DirectOut => {
+                        // _ => {
                         output += sample;
 
                         continue;
@@ -299,7 +351,7 @@ impl Voice {
         let mut effects_sample = osc_sample;
 
         for (effect, on) in self.effects.iter_mut() {
-            if *on {
+            if on.to_owned() {
                 effect.take_input(effects_sample);
 
                 effects_sample += effect.get_sample();
@@ -308,24 +360,14 @@ impl Voice {
 
         output += effects_sample;
 
+        // return Some(output);
+
         // TODO: add an allpass filter.
-        let sample =
-            output * self.data_table.env[0] * calculate_modulation(self.level, self.level_mod);
+        let sample = output * self.data_table.env[0];
         // warn!("{}", get_u32_sample(Some(sample)));
 
-        Some(sample)
+        self.all_pass.run(sample)
+
+        // sample
     }
-}
-
-pub fn get_u32_sample(sample: Option<f32>) -> u32 {
-    let sample = sample.unwrap();
-    warn!("{sample}");
-    // let sample = (u32::MAX as f64 * (sample * 0.5 + 0.5)).round() as u32;
-    // warn!("{sample}");
-
-    // sample
-    let normalized = (sample + 1.0) * U32;
-    let converted = normalized as u32;
-
-    converted
 }

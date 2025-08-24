@@ -85,28 +85,27 @@ impl HuovilainenMoog {
         self.compute_coeffs(cutoff, resonance);
 
         // Oversample
-        for _j in 0..2 {
-            let input = in_sample - self.res_quad * self.delay[5];
-            self.stage[0] =
-                self.delay[0] + self.tune * (tanh(input * THERMAL) - self.stage_tanh[0]);
-            self.delay[0] = self.stage[0];
-            for k in 1..4 {
-                let input = self.stage[k - 1];
-                self.stage_tanh[k - 1] = tanh(input * THERMAL);
-                self.stage[k] = self.delay[k]
-                    + self.tune
-                        * (self.stage_tanh[k - 1]
-                            - (if k != 3 {
-                                self.stage_tanh[k]
-                            } else {
-                                tanh(self.delay[k] * THERMAL)
-                            }));
-                self.delay[k] = self.stage[k];
-            }
-            // 0.5 sample delay for phase compensation
-            self.delay[5] = (self.stage[3] + self.delay[4]) * 0.5;
-            self.delay[4] = self.stage[3];
+        // for _ in 0..2 {
+        let input = in_sample - self.res_quad * self.delay[5];
+        self.stage[0] = self.delay[0] + self.tune * (tanh(input * THERMAL) - self.stage_tanh[0]);
+        self.delay[0] = self.stage[0];
+        for k in 1..4 {
+            let input = self.stage[k - 1];
+            self.stage_tanh[k - 1] = tanh(input * THERMAL);
+            self.stage[k] = self.delay[k]
+                + self.tune
+                    * (self.stage_tanh[k - 1]
+                        - (if k != 3 {
+                            self.stage_tanh[k]
+                        } else {
+                            tanh(self.delay[k] * THERMAL)
+                        }));
+            self.delay[k] = self.stage[k];
         }
+        // 0.5 sample delay for phase compensation
+        self.delay[5] = (self.stage[3] + self.delay[4]) * 0.5;
+        self.delay[4] = self.stage[3];
+        // }
         self.delay[5] as f32
     }
 }
@@ -133,11 +132,11 @@ impl LowPass {
         Self {
             filter,
             cutoff: 0.5,
-            resonance: 0.5,
+            resonance: 0.25,
             note: 0.0,
             // range: (0.0, 0.0),
             key_track: true,
-            mix: 0.25,
+            mix: 0.0,
             cutoff_mod: 0.0,
             res_mod: 0.0,
             mix_mod: 0.0,
@@ -163,9 +162,10 @@ impl LowPass {
         // } else {
         //     self.note
         // };
-        let delta = self.note * 21.0;
+        let delta = self.note * 16.0;
         let nudge = delta * calculate_modulation(self.cutoff, self.cutoff_mod);
         let cutoff = (self.note) + nudge;
+        // let cutoff = self.note + self.note * calculate_modulation(self.cutoff, self.cutoff_mod);
 
         // warn!("res {}", calculate_modulation(self.resonance, self.res_mod));
         let mix = calculate_modulation(self.mix, self.mix_mod);

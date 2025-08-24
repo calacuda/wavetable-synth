@@ -6,7 +6,7 @@ pub mod vreg;
 pub const HALF_U32: f32 = (u32::MAX / 2) as f32;
 
 pub fn get_u32_sample(sample: Option<f32>) -> u32 {
-    let sample = sample.unwrap_or(0.0);
+    let sample = sample.unwrap_or(HALF_U32);
     // let sample = (u32::MAX as f32 * sample) as u32;
     //
     // sample

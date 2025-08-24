@@ -3,18 +3,19 @@
 #[cfg(feature = "embeded")]
 extern crate alloc;
 #[cfg(feature = "embeded")]
-use alloc::vec::Vec;
+use heapless::Vec;
+// use alloc::rc::Rc;
 use anyhow::Result;
 use common::ModMatrixDest;
 use common::ModMatrixItem;
-use config::LFO_WAVE_TABLE_SIZE;
-use config::OSC_WAVE_TABLE_SIZE;
+// use config::LFO_WAVE_TABLE_SIZE;
+// use config::OSC_WAVE_TABLE_SIZE;
 use config::POLYPHONY;
 use effects::EffectsModule;
 use enum_dispatch::enum_dispatch;
 use log::*;
-#[cfg(feature = "desktop")]
-use std::sync::Arc;
+// #[cfg(feature = "desktop")]
+// use std::rc::Rc;
 use synth_engines::synth::build_sine_table;
 use synth_engines::synth::osc::N_OVERTONES;
 use voice::Voice;
@@ -22,13 +23,33 @@ use voice::Voice;
 #[cfg(feature = "desktop")]
 pub type HashMap<Key, Val> = fxhash::FxHashMap<Key, Val>;
 // pub type HashSet<T> = FxHashSet<T>;
-pub type ModMatrix = [Option<ModMatrixItem>; 256];
+#[cfg(feature = "desktop")]
+pub const MOD_MATRIX_SIZE: usize = 256;
+#[cfg(feature = "desktop")]
+pub type ModMatrix = [Option<ModMatrixItem>; MOD_MATRIX_SIZE];
+#[cfg(feature = "embeded")]
+pub const MOD_MATRIX_SIZE: usize = 8;
+#[cfg(feature = "embeded")]
+pub type ModMatrix = Vec<Option<ModMatrixItem>, MOD_MATRIX_SIZE>;
 // pub type WaveTable = Arc<[f32]>;
 // pub type OscWaveTable = [f32; OSC_WAVE_TABLE_SIZE];
 // pub type OscWaveTable = Arc<[f32]>;
-pub type OscWaveTable = Vec<f32>;
+// pub type OscWaveTable = Rc<[f32]>;
+// pub type OscWaveTable = Vec<f32>;
 // pub type LfoWaveTable = [f32; LFO_WAVE_TABLE_SIZE];
-// pub type LfoWaveTable = Arc<[f32]>;
+// pub type LfoWaveTable = Rc<[f32]>;
+// pub type LfoWaveTable = Vec<f32>;
+
+#[cfg(feature = "embeded")]
+pub type OscWaveTable = Vec<f32, { config::OSC_WAVE_TABLE_SIZE }>;
+
+#[cfg(feature = "embeded")]
+pub type LfoWaveTable = Vec<f32, { config::LFO_WAVE_TABLE_SIZE }>;
+
+#[cfg(feature = "desktop")]
+pub type OscWaveTable = Vec<f32>;
+
+#[cfg(feature = "desktop")]
 pub type LfoWaveTable = Vec<f32>;
 
 pub mod common;
@@ -65,7 +86,7 @@ pub struct App {
     /// describes what modulates what.
     pub mod_matrix: ModMatrix,
     /// used for routung cc messages
-    pub midi_table: [Option<ModMatrixDest>; 255],
+    pub midi_table: [Option<ModMatrixDest>; 256],
     /// the sound producers
     pub voices: std::sync::Arc<[std::sync::Mutex<Voice>]>,
 }
@@ -87,8 +108,8 @@ impl Default for App {
 
         Self {
             exit: Arc::new(false.into()),
-            mod_matrix: [None; 255],
-            midi_table: [None; 255],
+            mod_matrix: [None; 256],
+            midi_table: [None; 256],
             voices,
         }
     }
@@ -134,7 +155,7 @@ impl SampleGen for App {
         let sample: f32 = self
             .voices
             .iter()
-            .filter_map(|voice| voice.lock().unwrap().get_sample(&self.mod_matrix))
+            .map(|voice| voice.lock().unwrap().get_sample(&self.mod_matrix))
             .sum();
 
         // TODO: add an AllPass filter

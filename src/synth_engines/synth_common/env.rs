@@ -18,7 +18,7 @@ pub struct ADSR {
 
 impl ADSR {
     pub fn new() -> Self {
-        let base_params = [0.0, 0.1, 0.1, 0.5, 0.1];
+        let base_params = [0.0, 0.5, 0.75, 0.5, 0.1];
 
         Self {
             sample_rate: SAMPLE_RATE,
@@ -131,7 +131,7 @@ impl ModulationDest for ADSR {
     type ModTarget = EnvParam;
 
     fn modulate(&mut self, what: Self::ModTarget, by: f32) {
-        todo!("write ADSR modulation");
+        // todo!("write ADSR modulation");
     }
 
     fn reset(&mut self) {
