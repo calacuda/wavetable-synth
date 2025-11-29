@@ -5,7 +5,6 @@ edition = "2021"
 
 [features]
 default = ["desktop"]
-# pyo3 = ["dep:pyo3"]
 desktop = [
   # "dep:tinyaudio",
   "dep:midir",
