@@ -6,7 +6,6 @@ edition = "2021"
 [features]
 default = ["desktop"]
 desktop = [
-  # "dep:tinyaudio",
   "dep:midir",
   "dep:fxhash",
   "dep:fern",
