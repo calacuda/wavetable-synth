@@ -61,15 +61,15 @@ fn main() -> anyhow::Result<()> {
     //     amt: 0.5,
     //     bipolar: true,
     // });
-    mod_matrix[4] = Some(ModMatrixItem {
-        src: ModMatrixSrc::Env(1),
-        dest: ModMatrixDest::Lfo {
-            lfo: 0,
-            param: LfoParam::Speed,
-        },
-        amt: 1.0,
-        bipolar: false,
-    });
+    // mod_matrix[4] = Some(ModMatrixItem {
+    //     src: ModMatrixSrc::Env(1),
+    //     dest: ModMatrixDest::Lfo {
+    //         lfo: 0,
+    //         param: LfoParam::Speed,
+    //     },
+    //     amt: 1.0,
+    //     bipolar: false,
+    // });
 
     let params = OutputDeviceParameters {
         channels_count: 1,
@@ -102,5 +102,5 @@ fn main() -> anyhow::Result<()> {
     // run_midi(app.clone())?;
     loop {}
 
-    Ok(())
+    // Ok(())
 }

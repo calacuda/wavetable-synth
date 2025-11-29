@@ -51,6 +51,14 @@ pub const SYS_PLL_CONFIG_307P2MHZ: PLLConfig = PLLConfig {
     post_div2: 1,
 };
 
+#[allow(dead_code)]
+pub const SYS_PLL_CONFIG_300MHZ: PLLConfig = PLLConfig {
+    vco_freq: HertzU32::MHz(1500),
+    refdiv: 1,
+    post_div1: 5,
+    post_div2: 1,
+};
+
 /// PLL settings to run RP2040 at 384MHz
 /// $PICO_SDK/src/rp2_common/hardware_clocks/scripts/vcocalc.py
 /// The clock may be too fast and you may need to adjust QSPI Flash.

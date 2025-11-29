@@ -85,27 +85,28 @@ impl HuovilainenMoog {
         self.compute_coeffs(cutoff, resonance);
 
         // Oversample
-        // for _ in 0..2 {
-        let input = in_sample - self.res_quad * self.delay[5];
-        self.stage[0] = self.delay[0] + self.tune * (tanh(input * THERMAL) - self.stage_tanh[0]);
-        self.delay[0] = self.stage[0];
-        for k in 1..4 {
-            let input = self.stage[k - 1];
-            self.stage_tanh[k - 1] = tanh(input * THERMAL);
-            self.stage[k] = self.delay[k]
-                + self.tune
-                    * (self.stage_tanh[k - 1]
-                        - (if k != 3 {
-                            self.stage_tanh[k]
-                        } else {
-                            tanh(self.delay[k] * THERMAL)
-                        }));
-            self.delay[k] = self.stage[k];
+        for _ in 0..2 {
+            let input = in_sample - self.res_quad * self.delay[5];
+            self.stage[0] =
+                self.delay[0] + self.tune * (tanh(input * THERMAL) - self.stage_tanh[0]);
+            self.delay[0] = self.stage[0];
+            for k in 1..4 {
+                let input = self.stage[k - 1];
+                self.stage_tanh[k - 1] = tanh(input * THERMAL);
+                self.stage[k] = self.delay[k]
+                    + self.tune
+                        * (self.stage_tanh[k - 1]
+                            - (if k != 3 {
+                                self.stage_tanh[k]
+                            } else {
+                                tanh(self.delay[k] * THERMAL)
+                            }));
+                self.delay[k] = self.stage[k];
+            }
+            // 0.5 sample delay for phase compensation
+            self.delay[5] = (self.stage[3] + self.delay[4]) * 0.5;
+            self.delay[4] = self.stage[3];
         }
-        // 0.5 sample delay for phase compensation
-        self.delay[5] = (self.stage[3] + self.delay[4]) * 0.5;
-        self.delay[4] = self.stage[3];
-        // }
         self.delay[5] as f32
     }
 }

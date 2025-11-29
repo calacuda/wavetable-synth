@@ -16,7 +16,7 @@ use crate::{
 use array_macro::array;
 use biquad::{Biquad, Coefficients, DirectForm1, ToHertz, Q_BUTTERWORTH_F32};
 use core::ops::IndexMut;
-use log::{info, warn};
+use log::*;
 
 // const U32: f32 = u32::MAX as f32 * 0.5;
 
@@ -103,8 +103,8 @@ impl Voice {
             oscs,
             envs: array![ADSR::new(); N_ENV],
             lfos: array![LFO::new(); N_LFO],
-            // filters: [LowPass::new(), LowPass::new()],
             filters: [LowPass::new(), LowPass::new()],
+            // filters: [BQLowPass::new(), BQLowPass::new()],
             playing: None,
             data_table: DataTable::default(),
             effects,
@@ -124,10 +124,9 @@ impl Voice {
         let mut oscs = [
             (Oscillator::new(wave_table.clone()), true),
             (Oscillator::new(wave_table.clone()), true),
-            // (Oscillator::new(wave_table), false),
         ];
         // oscs[0].1 = true;
-        oscs[0].0.level = 0.75;
+        oscs[0].0.level = 0.8;
         oscs[1].0.offset = -12;
         oscs[1].0.level = 0.25;
         let targets = [
@@ -219,7 +218,7 @@ impl Voice {
     pub fn reset(&mut self) {
         // self.lfos.iter_mut().for_each(|lfo| lfo.index);
         self.oscs.iter_mut().for_each(|(osc, on)| {
-            if *on {
+            if !*on {
                 osc.reset()
             }
         });
@@ -362,7 +361,7 @@ impl Voice {
 
         // return Some(output);
 
-        // TODO: add an allpass filter.
+        // an allpass filter.
         let sample = output * self.data_table.env[0];
         // warn!("{}", get_u32_sample(Some(sample)));
 
