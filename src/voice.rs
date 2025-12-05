@@ -86,7 +86,7 @@ impl Voice {
         for i in 0..N_OSC {
             oscs.index_mut(i).0.target = targets[i];
             // info!("{:?}", targets[i]);
-            info!("{:?}", oscs.index_mut(i).0.target);
+            // info!("{:?}", oscs.index_mut(i).0.target);
         }
         let f0 = 440.hz();
         let fs = SAMPLE_RATE.hz();
