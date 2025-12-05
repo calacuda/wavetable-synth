@@ -3,8 +3,8 @@ use std::{
     sync::{Arc, Mutex},
     // thread::spawn,
 };
-use tinyaudio::{OutputDeviceParameters, run_output_device};
-use wavetable_synth::{App, SampleGen, config::SAMPLE_RATE, logger_init, run_midi};
+use tinyaudio::{run_output_device, OutputDeviceParameters};
+use wavetable_synth::{config::SAMPLE_RATE, logger_init, run_midi, App, SampleGen};
 
 fn main() -> anyhow::Result<()> {
     logger_init()?;
@@ -35,6 +35,10 @@ fn main() -> anyhow::Result<()> {
     if let Err(e) = device {
         error!("strating audio playback caused error: {e}");
     }
+
+    // if let Ok(mut synth) = app.lock() {
+    //     synth.play(48, 97);
+    // }
 
     run_midi(app.clone())?;
 

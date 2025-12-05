@@ -1,7 +1,6 @@
 #[cfg(feature = "embeded")]
 use crate::alloc::borrow::ToOwned;
 use crate::{
-    calculate_modulation,
     common::{DataTable, ModMatrixDest},
     config::{N_ENV, N_LFO, N_OSC, SAMPLE_RATE},
     effects::{chorus::Chorus, /* reverb::Reverb, */ Effect, EffectsModule},
@@ -288,7 +287,7 @@ impl Voice {
     }
 
     pub fn get_sample(&mut self, mod_matrix: &ModMatrix) -> f32 {
-        if self.playing.is_none() {
+        if self.playing.is_none() && !self.envs[0].pressed() && self.data_table.env[0] <= 0.0 {
             return 0.0;
         }
 
