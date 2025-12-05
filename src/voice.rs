@@ -57,7 +57,7 @@ pub struct Voice {
     pub level: f32,
     /// stores the modulation amount for level
     level_mod: f32,
-    ///
+    /// used to stop clipping.
     all_pass: DirectForm1<f32>,
 }
 
