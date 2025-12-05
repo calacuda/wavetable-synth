@@ -34,7 +34,7 @@ fn main() -> anyhow::Result<()> {
         error!("strating audio playback caused error: {e}");
     }
 
-    // if let Ok(mut synth) = app.lock() {
+    // if let Ok(mut synth) = app.write() {
     //     synth.play(48, 97);
     // }
 
