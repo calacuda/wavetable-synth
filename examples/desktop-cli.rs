@@ -1,15 +1,12 @@
 use log::error;
-use std::{
-    sync::{Arc, Mutex},
-    // thread::spawn,
-};
+use std::sync::{Arc, RwLock};
 use tinyaudio::{run_output_device, OutputDeviceParameters};
 use wavetable_synth::{config::SAMPLE_RATE, logger_init, run_midi, App, SampleGen};
 
 fn main() -> anyhow::Result<()> {
     logger_init()?;
 
-    let app = Arc::new(Mutex::new(App::default()));
+    let app = Arc::new(RwLock::new(App::default()));
 
     let params = OutputDeviceParameters {
         channels_count: 1,
@@ -22,11 +19,12 @@ fn main() -> anyhow::Result<()> {
 
         move |data| {
             for samples in data.chunks_mut(params.channels_count) {
-                let value = synth.lock().unwrap().get_sample();
-                // info!("value {value}");
+                if let Ok(mut synth) = synth.write() {
+                    let value = synth.get_sample();
 
-                for sample in samples {
-                    *sample = value;
+                    for sample in samples {
+                        *sample = value;
+                    }
                 }
             }
         }

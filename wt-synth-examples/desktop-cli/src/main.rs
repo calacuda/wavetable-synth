@@ -1,6 +1,6 @@
 use log::error;
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
     // thread::spawn,
 };
 use tinyaudio::{OutputDeviceParameters, run_output_device};
@@ -10,7 +10,7 @@ use wavetable_synth::{
         LfoParam, LowPass, LowPassParam, ModMatrixDest, ModMatrixItem, ModMatrixSrc, OscParam,
     },
     config::SAMPLE_RATE,
-    logger_init, run_midi,
+    logger_init,
     synth_engines::synth::{build_sine_table, osc::N_OVERTONES},
     voice::Voice,
 };
@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<()> {
         let mut voice = Voice::new(wave_table);
         voice.press(48, 60);
 
-        Arc::new(Mutex::new(voice))
+        Arc::new(RwLock::new(voice))
     };
     let mut mod_matrix: [Option<ModMatrixItem>; 256] = [None; 256];
     mod_matrix[0] = Some(ModMatrixItem {
@@ -83,13 +83,16 @@ fn main() -> anyhow::Result<()> {
 
         move |data| {
             for samples in data.chunks_mut(params.channels_count) {
-                let value = synth.lock().unwrap().get_sample(&mod_matrix);
+                // let value = synth.lock().unwrap().get_sample(&mod_matrix);
                 // let value = synth.lock().unwrap().get_sample();
                 // info!("value {value}");
+                if let Ok(mut synth) = synth.write() {
+                    let value = synth.get_sample(&mod_matrix);
 
-                for sample in samples {
-                    // *sample = value.unwrap();
-                    *sample = value;
+                    for sample in samples {
+                        // *sample = value.unwrap();
+                        *sample = value;
+                    }
                 }
             }
         }

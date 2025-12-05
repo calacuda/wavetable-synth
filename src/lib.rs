@@ -88,13 +88,17 @@ pub struct App {
     /// used for routung cc messages
     pub midi_table: [Option<ModMatrixDest>; 256],
     /// the sound producers
-    pub voices: std::sync::Arc<[std::sync::Mutex<Voice>]>,
+    pub voices: std::sync::Arc<[std::sync::RwLock<Voice>]>,
+    /// all pass filter to avoid clipping
+    allpass: biquad::DirectForm1<f32>,
 }
 
 #[cfg(feature = "desktop")]
 impl Default for App {
     fn default() -> Self {
-        use std::sync::{Arc, Mutex};
+        use crate::config::SAMPLE_RATE;
+        use biquad::*;
+        use std::sync::{Arc, RwLock};
 
         let mut overtones = [1.0; N_OVERTONES];
 
@@ -103,14 +107,22 @@ impl Default for App {
         let wave_table = build_sine_table(&overtones);
 
         let voices = (0..POLYPHONY)
-            .map(|_| Mutex::new(Voice::new(wave_table.clone())))
+            .map(|_| RwLock::new(Voice::new(wave_table.clone())))
             .collect();
+
+        // Cutoff and sampling frequencies
+        let f0 = ((20_000 + 20) / 2).hz();
+        let fs = SAMPLE_RATE.hz();
+        let coeffs =
+            Coefficients::<f32>::from_params(Type::AllPass, fs, f0, Q_BUTTERWORTH_F32).unwrap();
+        let allpass = DirectForm1::<f32>::new(coeffs);
 
         Self {
             exit: Arc::new(false.into()),
             mod_matrix: [None; 256],
             midi_table: [None; 256],
             voices,
+            allpass,
         }
     }
 }
@@ -126,21 +138,20 @@ impl MidiControlled for App {
         match *message {
             MidiMessage::NoteOn(_channel, KeyEvent { key, value }) => {
                 for voice in self.voices.iter() {
-                    let mut voice = voice.lock().unwrap();
-
-                    if voice.playing.is_none() {
-                        info!("playing note {key}");
-                        voice.press(key, value);
-                        break;
+                    if let Ok(mut voice) = voice.write() {
+                        if voice.playing.is_none() {
+                            voice.press(key, value);
+                            break;
+                        }
                     }
                 }
             }
             MidiMessage::NoteOff(_channel, KeyEvent { key, value }) => {
                 for voice in self.voices.iter() {
-                    let mut voice = voice.lock().unwrap();
-
-                    if voice.playing.is_some_and(|note| note == key) {
-                        voice.release();
+                    if let Ok(mut voice) = voice.write() {
+                        if voice.playing.is_some_and(|note| note == key) {
+                            voice.release();
+                        }
                     }
                 }
             }
@@ -152,15 +163,20 @@ impl MidiControlled for App {
 #[cfg(feature = "desktop")]
 impl SampleGen for App {
     fn get_sample(&mut self) -> f32 {
+        use biquad::Biquad;
+
         let sample: f32 = self
             .voices
             .iter()
-            .map(|voice| voice.lock().unwrap().get_sample(&self.mod_matrix))
+            .map(|voice| voice.write().unwrap().get_sample(&self.mod_matrix))
             .sum();
 
-        // TODO: add an AllPass filter
+        // AllPass filter
 
-        sample.tanh()
+        let sample = self.allpass.run(sample * 0.75) * 0.5;
+        // let sample = sample.tanh();
+
+        sample
     }
 }
 
@@ -168,22 +184,21 @@ impl SampleGen for App {
 impl App {
     pub fn play(&mut self, note: midi_control::MidiNote, velocity: u8) {
         for voice in self.voices.iter() {
-            let mut voice = voice.lock().unwrap();
-
-            if voice.playing.is_none() {
-                // info!("playing note {note}");
-                voice.press(note, velocity);
-                break;
+            if let Ok(mut voice) = voice.write() {
+                if voice.playing.is_none() {
+                    voice.press(note, velocity);
+                    break;
+                }
             }
         }
     }
 
     pub fn stop(&mut self, note: midi_control::MidiNote) {
         for voice in self.voices.iter() {
-            let mut voice = voice.lock().unwrap();
-
-            if voice.playing.is_some_and(|n| n == note) {
-                voice.release();
+            if let Ok(mut voice) = voice.write() {
+                if voice.playing.is_some_and(|n| n == note) {
+                    voice.release();
+                }
             }
         }
     }
@@ -201,13 +216,13 @@ pub fn calculate_modulation(base: f32, amt: f32) -> f32 {
 
 #[cfg(feature = "desktop")]
 pub fn run_midi(
-    synth: std::sync::Arc<std::sync::Mutex<App>>, /* , exit: Arc<AtomicBool> */
+    synth: std::sync::Arc<std::sync::RwLock<App>>, /* , exit: Arc<AtomicBool> */
 ) -> Result<()> {
     use midir::{Ignore, MidiInput, PortInfoError};
 
     let mut registered_ports = HashMap::default();
     let exit = {
-        let app = synth.lock().unwrap();
+        let app = synth.read().unwrap();
         app.exit.clone()
     };
 
@@ -246,7 +261,10 @@ pub fn run_midi(
                         let message = midi_control::MidiMessage::from(message);
 
                         // do midi stuff
-                        synth.lock().unwrap().midi_input(&message);
+                        // synth.lock().unwrap().midi_input(&message);
+                        if let Ok(mut synth) = synth.write() {
+                            synth.midi_input(&message);
+                        }
                     },
                     (),
                 ),
