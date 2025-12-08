@@ -1,0 +1,5 @@
+_:
+  @just -l
+
+build:
+  cargo xtask bundle wt_synth --release
