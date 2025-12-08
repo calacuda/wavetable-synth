@@ -30,6 +30,8 @@ pub struct WtSynth {
 
 #[derive(Params)]
 struct WtSynthParams {
+    // TODO: make each osc a nested param as seen here: https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs.
+
     // Osc1 stuff
     #[id = "Osc1 Level"]
     pub osc1_level: FloatParam,
