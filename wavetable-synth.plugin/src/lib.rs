@@ -4,7 +4,10 @@ use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
     config::{POLYPHONY, SAMPLE_RATE},
-    synth_engines::synth::{build_sine_table, osc::N_OVERTONES},
+    synth_engines::synth::{
+        build_sine_table,
+        osc::{OscTarget, N_OVERTONES},
+    },
     voice::Voice,
     ModMatrix,
 };
@@ -27,12 +30,38 @@ pub struct WtSynth {
 
 #[derive(Params)]
 struct WtSynthParams {
-    /// The parameter's ID is used to identify the parameter in the wrappred plugin API. As long as
-    /// these IDs remain constant, you can rename and reorder these fields as you wish. The
-    /// parameters are exposed to the host in the same order they were defined. In this case, this
-    /// gain parameter is stored as linear gain while the values are displayed in decibels.
-    #[id = "gain"]
-    pub gain: FloatParam,
+    // Osc1 stuff
+    #[id = "Osc1 Level"]
+    pub osc1_level: FloatParam,
+    #[id = "Osc1 Detune"]
+    pub osc1_detune: FloatParam,
+    // #[id = "Osc 1 Detune"]
+    // pub osc1_detune: FloatParam,
+    #[id = "Osc1 Note Offset"]
+    pub osc1_offset: IntParam,
+    #[id = "Osc1 Target"]
+    pub osc1_target: EnumParam<OscTarget>,
+
+    // Osc2 stuff
+    #[id = "Osc2 Level"]
+    pub osc2_level: FloatParam,
+    #[id = "Osc2 Detune"]
+    pub osc2_detune: FloatParam,
+    #[id = "Osc2 Note Offset"]
+    pub osc2_offset: IntParam,
+    #[id = "Osc2 Target"]
+    pub osc2_target: EnumParam<OscTarget>,
+
+    // Osc3 stuff
+    #[id = "Osc3 Level"]
+    pub osc3_level: FloatParam,
+    #[id = "Osc3 Detune"]
+    pub osc3_detune: FloatParam,
+    #[id = "Osc3 Note Offset"]
+    pub osc3_offset: IntParam,
+    #[id = "Osc3 Target"]
+    pub osc3_target: EnumParam<OscTarget>,
+    // env1 stuff
 }
 
 impl Default for WtSynth {
@@ -69,11 +98,24 @@ impl Default for WtSynth {
 impl Default for WtSynthParams {
     fn default() -> Self {
         Self {
-            // This gain is stored as linear gain. NIH-plug comes with useful conversion functions
-            // to treat these kinds of parameters as if we were dealing with decibels. Storing this
-            // as decibels is easier to work with, but requires a conversion for every sample.
-            gain: FloatParam::new(
-                "Gain",
+            // Osc1
+            osc1_level: FloatParam::new(
+                "Osc1 Level",
+                util::db_to_gain(1.0),
+                FloatRange::Skewed {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                    // This makes the range appear as if it was linear when displaying the values as
+                    // decibels
+                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
+                },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            .with_unit(" dB")
+            .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc1_detune: FloatParam::new(
+                "Osc1 Detune",
                 util::db_to_gain(0.0),
                 FloatRange::Skewed {
                     min: util::db_to_gain(-1.0),
@@ -83,15 +125,89 @@ impl Default for WtSynthParams {
                     factor: FloatRange::gain_skew_factor(-1.0, 1.0),
                 },
             )
-            // Because the gain parameter is stored as linear gain instead of storing the value as
-            // decibels, we need logarithmic smoothing
             .with_smoother(SmoothingStyle::Logarithmic(2.0))
-            .with_unit(" dB")
-            // There are many predefined formatters we can use here. If the gain was stored as
-            // decibels instead of as a linear gain value, we could have also used the
-            // `.with_step_size(0.1)` function to get internal rounding.
             .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
             .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc1_offset: IntParam::new(
+                "Osc1 Note Offset",
+                0,
+                IntRange::Linear { min: -96, max: 96 },
+            ),
+            osc1_target: EnumParam::new("Osc1 Target", OscTarget::Filter1),
+
+            // Osc2
+            osc2_level: FloatParam::new(
+                "Osc2 Level",
+                util::db_to_gain(1.0),
+                FloatRange::Skewed {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                    // This makes the range appear as if it was linear when displaying the values as
+                    // decibels
+                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
+                },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            .with_unit(" dB")
+            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
+            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc2_detune: FloatParam::new(
+                "Osc2 Detune",
+                util::db_to_gain(0.0),
+                FloatRange::Skewed {
+                    min: util::db_to_gain(-1.0),
+                    max: util::db_to_gain(1.0),
+                    // This makes the range appear as if it was linear when displaying the values as
+                    // decibels
+                    factor: FloatRange::gain_skew_factor(-1.0, 1.0),
+                },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(2.0))
+            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
+            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc2_offset: IntParam::new(
+                "Osc2 Note Offset",
+                0,
+                IntRange::Linear { min: -96, max: 96 },
+            ),
+            osc2_target: EnumParam::new("Osc2 Target", OscTarget::Filter2),
+
+            // Osc3
+            osc3_level: FloatParam::new(
+                "Osc3 Level",
+                util::db_to_gain(1.0),
+                FloatRange::Skewed {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                    // This makes the range appear as if it was linear when displaying the values as
+                    // decibels
+                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
+                },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            .with_unit(" dB")
+            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
+            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc3_detune: FloatParam::new(
+                "Osc3 Detune",
+                util::db_to_gain(0.0),
+                FloatRange::Skewed {
+                    min: util::db_to_gain(-1.0),
+                    max: util::db_to_gain(1.0),
+                    // This makes the range appear as if it was linear when displaying the values as
+                    // decibels
+                    factor: FloatRange::gain_skew_factor(-1.0, 1.0),
+                },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(2.0))
+            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
+            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc3_offset: IntParam::new(
+                "Osc3 Note Offset",
+                0,
+                IntRange::Linear { min: -96, max: 96 },
+            ),
+            osc3_target: EnumParam::new("Osc3 Target", OscTarget::Filter1_2),
         }
     }
 }

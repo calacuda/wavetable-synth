@@ -3,3 +3,8 @@ _:
 
 build:
   cargo xtask bundle wt_synth --release
+
+install: build
+  cp -r ./target/bundled/Wt\ Synth.vst3 ~/.vst3
+  cp -r ./target/bundled/Wt\ Synth.clap ~/.clap
+

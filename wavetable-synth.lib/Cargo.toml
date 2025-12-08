@@ -31,6 +31,7 @@ libm = { version = "0.2.11", optional = true }
 log = { version = "0.4.25", features = ["max_level_info", "release_max_level_info"] }
 midi-control = { version = "0.2.2", default-features = false, optional = true }
 midir = { version = "0.10.1", optional = true }
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug", version = "0.0.0", default-features = false }
 # reverb = "1.0.47"
 serde = { version = "1.0.217", features = ["derive"], default-features = false }
 strum = { version = "0.26.3", features = ["derive"], default-features = false }

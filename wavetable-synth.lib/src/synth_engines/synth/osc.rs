@@ -6,10 +6,11 @@ use crate::{
 };
 // use libm::powf;
 use log::{info, warn};
+use nih_plug::prelude::Enum;
 
 pub const N_OVERTONES: usize = 8;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Enum)]
 pub enum OscTarget {
     Filter1,
     Filter2,

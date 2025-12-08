@@ -294,6 +294,7 @@ impl Voice {
         self.route_mod_matrix(mod_matrix);
 
         // calculate envs
+        #[allow(clippy::never_loop)]
         for (i, env) in self.envs.iter_mut().enumerate() {
             let sample = env.get_samnple();
             self.data_table.env[i] = sample;
