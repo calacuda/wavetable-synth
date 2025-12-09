@@ -7,9 +7,12 @@ use std::{
 use wavetable_synth::{
     common::ModMatrixDest,
     config::{N_ENV, N_OSC, POLYPHONY, SAMPLE_RATE},
-    synth_engines::synth::{
-        build_sine_table,
-        osc::{OscTarget, N_OVERTONES},
+    synth_engines::{
+        synth::{
+            build_sine_table,
+            osc::{OscTarget, N_OVERTONES},
+        },
+        synth_common::env::{ATTACK, DECAY, RELEASE},
     },
     voice::Voice,
     ModMatrix,
@@ -35,6 +38,8 @@ pub struct WtSynth {
 #[derive(Params, Debug)]
 struct OscParams {
     // Osc stuff
+    #[id = "Osc Enabled"]
+    pub osc_enable: BoolParam,
     #[id = "Osc Level"]
     pub osc_level: FloatParam,
     #[id = "Osc Detune"]
@@ -48,9 +53,10 @@ struct OscParams {
 impl OscParams {
     pub fn new(i: usize, target: OscTarget) -> Self {
         Self {
+            osc_enable: BoolParam::new(format!("Osc {i} Enabled"), i == 1),
             osc_level: FloatParam::new(
                 format!("Osc {i} Level"),
-                util::db_to_gain(1.0),
+                1.0,
                 FloatRange::Skewed {
                     min: 0.0,
                     max: 1.0,
@@ -60,9 +66,6 @@ impl OscParams {
                 },
             )
             .with_smoother(SmoothingStyle::Logarithmic(1.0)),
-            // .with_unit(" dB")
-            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
-            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
             osc_detune: FloatParam::new(
                 format!("Osc {i} Detune"),
                 0.0,
@@ -71,9 +74,6 @@ impl OscParams {
                     max: 1.0,
                 },
             ),
-            // .with_smoother(SmoothingStyle::Logarithmic(2.0))
-            // .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
-            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
             osc_offset: IntParam::new(
                 format!("Osc {i} Note Offset"),
                 0,
@@ -103,50 +103,28 @@ impl EnvParams {
             attack: FloatParam::new(
                 format!("Attack {i}"),
                 0.25,
-                FloatRange::Linear {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
-                },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             ),
-            // .with_smoother(SmoothingStyle::Logarithmic(1.0)),
-            // .with_unit(" dB")
-            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
-            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
             decay: FloatParam::new(
                 format!("Decay {i}"),
                 0.25,
-                FloatRange::Linear {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
-                },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             ),
-            // .with_smoother(SmoothingStyle::Logarithmic(1.0))
-            // // .with_unit(" dB")
-            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
-            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
             sustain: FloatParam::new(
                 format!("Sustain {i}"),
                 0.5,
                 FloatRange::Skewed {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
+                    min: 0.0,
+                    max: 1.0,
                     factor: FloatRange::gain_skew_factor(0.0, 1.0),
                 },
-            ),
-            // .with_smoother(SmoothingStyle::Logarithmic(1.0))
-            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
-            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(1.0)),
             release: FloatParam::new(
                 format!("Release {i}"),
                 0.02,
-                FloatRange::Linear {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
-                },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             ),
-            // .with_smoother(SmoothingStyle::Logarithmic(1.0))
-            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
-            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
         }
     }
 }
@@ -157,6 +135,8 @@ struct WtSynthParams {
     pub osc: Vec<OscParams>,
     #[nested(array, group = "ENV")]
     pub env: Vec<EnvParams>,
+    // TODO: add params for filter 1 and 2
+    // TODO: add params for lfos
 }
 
 impl Default for WtSynthParams {
@@ -342,65 +322,78 @@ impl Plugin for WtSynth {
 
 impl WtSynth {
     fn set_voice_params(&mut self) {
-        // // Oscilator
-        // self.params
-        //     .osc
-        //     .iter()
-        //     .zip(self.memo_params.osc.iter())
-        //     .enumerate()
-        //     .for_each(|(i, (osc_params, memo_params))| {
-        //         // oscilator level
-        //         {
-        //             let param = osc_params.osc_level.smoothed.next();
-        //
-        //             if param != memo_params.osc_level.smoothed.next() {
-        //                 self.voices.iter().for_each(|voice| {
-        //                     if let Ok(mut voice) = voice.write() {
-        //                         voice.oscs[i].0.level = param;
-        //                     }
-        //                 })
-        //             }
-        //         }
-        //
-        //         // oscilator detune
-        //         {
-        //             let param = osc_params.osc_detune.smoothed.next();
-        //
-        //             if param != memo_params.osc_detune.smoothed.next() {
-        //                 self.voices.iter().for_each(|voice| {
-        //                     if let Ok(mut voice) = voice.write() {
-        //                         voice.oscs[i].0.detune = param;
-        //                     }
-        //                 })
-        //             }
-        //         }
-        //
-        //         // oscilator offset
-        //         {
-        //             let param = osc_params.osc_offset.smoothed.next();
-        //
-        //             if param != memo_params.osc_offset.smoothed.next() {
-        //                 self.voices.iter().for_each(|voice| {
-        //                     if let Ok(mut voice) = voice.write() {
-        //                         voice.oscs[i].0.offset = param as i16;
-        //                     }
-        //                 })
-        //             }
-        //         }
-        //
-        //         // oscilator target
-        //         {
-        //             let param = osc_params.osc_target.value();
-        //
-        //             if param != memo_params.osc_target.value() {
-        //                 self.voices.iter().for_each(|voice| {
-        //                     if let Ok(mut voice) = voice.write() {
-        //                         voice.oscs[i].0.target = param;
-        //                     }
-        //                 })
-        //             }
-        //         }
-        //     });
+        // Oscilator
+        self.params
+            .osc
+            .iter()
+            // .zip(self.memo_params.osc.iter())
+            .enumerate()
+            .for_each(|(i, osc_params)| {
+                // oscilator enabled
+                {
+                    let param = osc_params.osc_enable.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.oscs[i].1 {
+                                voice.oscs[i].1 = param;
+                            }
+                        }
+                    })
+                }
+
+                // oscilator level
+                {
+                    let param = osc_params.osc_level.smoothed.next();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.oscs[i].0.level {
+                                voice.oscs[i].0.level = param;
+                            }
+                        }
+                    })
+                }
+
+                // oscilator detune
+                {
+                    let param = osc_params.osc_detune.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.oscs[i].0.detune {
+                                voice.oscs[i].0.detune = param;
+                            }
+                        }
+                    })
+                }
+
+                // oscilator offset
+                {
+                    let param = osc_params.osc_offset.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.oscs[i].0.offset as i32 {
+                                voice.oscs[i].0.offset = param as i16;
+                            }
+                        }
+                    })
+                }
+
+                // oscilator target
+                {
+                    let param = osc_params.osc_target.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.oscs[i].0.target {
+                                voice.oscs[i].0.target = param;
+                            }
+                        }
+                    })
+                }
+            });
 
         // Envelope filter
         self.params
@@ -413,27 +406,28 @@ impl WtSynth {
                 {
                     let param = env_params.attack.value();
 
-                    if param != memo_params.attack.value() {
-                        self.voices.iter().for_each(|voice| {
-                            if let Ok(mut voice) = voice.write() {
-                                info!("set attack to {}", param);
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.envs[i].base_params[ATTACK] {
+                                // info!("set attack to {}", param);
                                 voice.envs[i].set_atk(param);
                             }
-                        })
-                    }
+                        }
+                    })
                 }
 
                 // Envelope Decay
                 {
-                    let param = env_params.decay.smoothed.next();
+                    let param = env_params.decay.value();
 
-                    if param != memo_params.decay.smoothed.next() {
-                        self.voices.iter().for_each(|voice| {
-                            if let Ok(mut voice) = voice.write() {
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.envs[i].base_params[DECAY] {
+                                // info!("set decay to {}", param);
                                 voice.envs[i].set_decay(param);
                             }
-                        })
-                    }
+                        }
+                    })
                 }
 
                 // Envelope Sustain
@@ -443,6 +437,7 @@ impl WtSynth {
                     if param != memo_params.sustain.smoothed.next() {
                         self.voices.iter().for_each(|voice| {
                             if let Ok(mut voice) = voice.write() {
+                                // info!("setting sustain to: {param}");
                                 voice.envs[i].set_sus(param);
                             }
                         })
@@ -451,15 +446,16 @@ impl WtSynth {
 
                 // Envelope release
                 {
-                    let param = env_params.release.smoothed.next();
+                    let param = env_params.release.value();
 
-                    if param != memo_params.release.smoothed.next() {
-                        self.voices.iter().for_each(|voice| {
-                            if let Ok(mut voice) = voice.write() {
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.envs[i].base_params[RELEASE] {
+                                // info!("set release to {}", param);
                                 voice.envs[i].set_release(param);
                             }
-                        })
-                    }
+                        }
+                    })
                 }
             });
     }
