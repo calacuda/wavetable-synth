@@ -4,13 +4,12 @@ use crate::{
     config::{OSC_WAVE_TABLE_SIZE, SAMPLE_RATE},
     midi_to_freq, pow, tanh, ModulationDest, OscWaveTable, SampleGen,
 };
-// use libm::powf;
-use log::{info, warn};
+use core::fmt::Display;
 use nih_plug::prelude::Enum;
 
 pub const N_OVERTONES: usize = 8;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Enum)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Enum)]
 pub enum OscTarget {
     Filter1,
     Filter2,
@@ -19,11 +18,33 @@ pub enum OscTarget {
     DirectOut,
 }
 
+impl Display for OscTarget {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Filter1 => write!(f, "Filter 1"),
+            Self::Filter2 => write!(f, "Filter 2"),
+            Self::Filter1_2 => write!(f, "Filter 1 & 2"),
+            Self::Effects => write!(f, "Effects"),
+            Self::DirectOut => write!(f, "Direct Out"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct WavetableOscillator {
     sample_rate: f32,
     index: f32,
     index_increment: f32,
+}
+
+impl Default for WavetableOscillator {
+    fn default() -> Self {
+        Self {
+            sample_rate: SAMPLE_RATE as f32,
+            index: 0.0,
+            index_increment: 0.0,
+        }
+    }
 }
 
 impl WavetableOscillator {

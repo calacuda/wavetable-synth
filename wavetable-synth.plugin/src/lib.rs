@@ -1,9 +1,12 @@
 use biquad::*;
-use nih_plug::prelude::*;
-use std::sync::{Arc, RwLock};
+use nih_plug::{log::info, prelude::*};
+use std::{
+    ops::Deref,
+    sync::{Arc, RwLock},
+};
 use wavetable_synth::{
     common::ModMatrixDest,
-    config::{POLYPHONY, SAMPLE_RATE},
+    config::{N_ENV, N_OSC, POLYPHONY, SAMPLE_RATE},
     synth_engines::synth::{
         build_sine_table,
         osc::{OscTarget, N_OVERTONES},
@@ -18,6 +21,7 @@ use wavetable_synth::{
 
 pub struct WtSynth {
     params: Arc<WtSynthParams>,
+    memo_params: Arc<WtSynthParams>,
     /// describes what modulates what.
     pub mod_matrix: ModMatrix,
     /// used for routung cc messages
@@ -28,42 +32,151 @@ pub struct WtSynth {
     allpass: biquad::DirectForm1<f32>,
 }
 
+#[derive(Params, Debug)]
+struct OscParams {
+    // Osc stuff
+    #[id = "Osc Level"]
+    pub osc_level: FloatParam,
+    #[id = "Osc Detune"]
+    pub osc_detune: FloatParam,
+    #[id = "Osc Note Offset"]
+    pub osc_offset: IntParam,
+    #[id = "Osc Target"]
+    pub osc_target: EnumParam<OscTarget>,
+}
+
+impl OscParams {
+    pub fn new(i: usize, target: OscTarget) -> Self {
+        Self {
+            osc_level: FloatParam::new(
+                format!("Osc {i} Level"),
+                util::db_to_gain(1.0),
+                FloatRange::Skewed {
+                    min: 0.0,
+                    max: 1.0,
+                    // This makes the range appear as if it was linear when displaying the values as
+                    // decibels
+                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
+                },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(1.0)),
+            // .with_unit(" dB")
+            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc_detune: FloatParam::new(
+                format!("Osc {i} Detune"),
+                0.0,
+                FloatRange::Linear {
+                    min: -1.0,
+                    max: 1.0,
+                },
+            ),
+            // .with_smoother(SmoothingStyle::Logarithmic(2.0))
+            // .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
+            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            osc_offset: IntParam::new(
+                format!("Osc {i} Note Offset"),
+                0,
+                IntRange::Linear { min: -96, max: 96 },
+            ),
+            osc_target: EnumParam::new(format!("Osc {i} Target"), target),
+        }
+    }
+}
+
+#[derive(Params)]
+struct EnvParams {
+    // Env stuff
+    #[id = "Attack"]
+    pub attack: FloatParam,
+    #[id = "Decay"]
+    pub decay: FloatParam,
+    #[id = "Sustain"]
+    pub sustain: FloatParam,
+    #[id = "Release"]
+    pub release: FloatParam,
+}
+
+impl EnvParams {
+    fn new(i: usize) -> Self {
+        Self {
+            attack: FloatParam::new(
+                format!("Attack {i}"),
+                0.25,
+                FloatRange::Linear {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                },
+            ),
+            // .with_smoother(SmoothingStyle::Logarithmic(1.0)),
+            // .with_unit(" dB")
+            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            decay: FloatParam::new(
+                format!("Decay {i}"),
+                0.25,
+                FloatRange::Linear {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                },
+            ),
+            // .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            // // .with_unit(" dB")
+            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            sustain: FloatParam::new(
+                format!("Sustain {i}"),
+                0.5,
+                FloatRange::Skewed {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
+                },
+            ),
+            // .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            release: FloatParam::new(
+                format!("Release {i}"),
+                0.02,
+                FloatRange::Linear {
+                    min: util::db_to_gain(0.0),
+                    max: util::db_to_gain(1.0),
+                },
+            ),
+            // .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            // .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+            // .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+        }
+    }
+}
+
 #[derive(Params)]
 struct WtSynthParams {
-    // TODO: make each osc a nested param as seen here: https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs.
+    #[nested(array, group = "OSC")]
+    pub osc: Vec<OscParams>,
+    #[nested(array, group = "ENV")]
+    pub env: Vec<EnvParams>,
+}
 
-    // Osc1 stuff
-    #[id = "Osc1 Level"]
-    pub osc1_level: FloatParam,
-    #[id = "Osc1 Detune"]
-    pub osc1_detune: FloatParam,
-    // #[id = "Osc 1 Detune"]
-    // pub osc1_detune: FloatParam,
-    #[id = "Osc1 Note Offset"]
-    pub osc1_offset: IntParam,
-    #[id = "Osc1 Target"]
-    pub osc1_target: EnumParam<OscTarget>,
+impl Default for WtSynthParams {
+    fn default() -> Self {
+        let osc = [
+            OscTarget::Filter1,
+            OscTarget::Filter2,
+            OscTarget::Filter1_2,
+            OscTarget::Effects,
+            OscTarget::DirectOut,
+        ][0..N_OSC]
+            .iter()
+            .enumerate()
+            .map(|(i, target)| OscParams::new(i + 1, *target))
+            .collect();
 
-    // Osc2 stuff
-    #[id = "Osc2 Level"]
-    pub osc2_level: FloatParam,
-    #[id = "Osc2 Detune"]
-    pub osc2_detune: FloatParam,
-    #[id = "Osc2 Note Offset"]
-    pub osc2_offset: IntParam,
-    #[id = "Osc2 Target"]
-    pub osc2_target: EnumParam<OscTarget>,
+        let env = (0..N_ENV).map(|i| EnvParams::new(i + 1)).collect();
 
-    // Osc3 stuff
-    #[id = "Osc3 Level"]
-    pub osc3_level: FloatParam,
-    #[id = "Osc3 Detune"]
-    pub osc3_detune: FloatParam,
-    #[id = "Osc3 Note Offset"]
-    pub osc3_offset: IntParam,
-    #[id = "Osc3 Target"]
-    pub osc3_target: EnumParam<OscTarget>,
-    // env1 stuff
+        Self { osc, env }
+    }
 }
 
 impl Default for WtSynth {
@@ -86,130 +199,15 @@ impl Default for WtSynth {
         let allpass = DirectForm1::<f32>::new(coeffs);
 
         // voices[0].write().unwrap().press(48, 100);
+        let params = || WtSynthParams::default();
 
         Self {
-            params: Arc::new(WtSynthParams::default()),
+            params: Arc::new(params()),
+            memo_params: Arc::new(params()),
             mod_matrix: [None; 256],
             midi_table: [None; 256],
             voices,
             allpass,
-        }
-    }
-}
-
-impl Default for WtSynthParams {
-    fn default() -> Self {
-        Self {
-            // Osc1
-            osc1_level: FloatParam::new(
-                "Osc1 Level",
-                util::db_to_gain(1.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
-                    // This makes the range appear as if it was linear when displaying the values as
-                    // decibels
-                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
-                },
-            )
-            .with_smoother(SmoothingStyle::Logarithmic(1.0))
-            .with_unit(" dB")
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
-            osc1_detune: FloatParam::new(
-                "Osc1 Detune",
-                util::db_to_gain(0.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(-1.0),
-                    max: util::db_to_gain(1.0),
-                    // This makes the range appear as if it was linear when displaying the values as
-                    // decibels
-                    factor: FloatRange::gain_skew_factor(-1.0, 1.0),
-                },
-            )
-            .with_smoother(SmoothingStyle::Logarithmic(2.0))
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
-            osc1_offset: IntParam::new(
-                "Osc1 Note Offset",
-                0,
-                IntRange::Linear { min: -96, max: 96 },
-            ),
-            osc1_target: EnumParam::new("Osc1 Target", OscTarget::Filter1),
-
-            // Osc2
-            osc2_level: FloatParam::new(
-                "Osc2 Level",
-                util::db_to_gain(1.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
-                    // This makes the range appear as if it was linear when displaying the values as
-                    // decibels
-                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
-                },
-            )
-            .with_smoother(SmoothingStyle::Logarithmic(1.0))
-            .with_unit(" dB")
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
-            osc2_detune: FloatParam::new(
-                "Osc2 Detune",
-                util::db_to_gain(0.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(-1.0),
-                    max: util::db_to_gain(1.0),
-                    // This makes the range appear as if it was linear when displaying the values as
-                    // decibels
-                    factor: FloatRange::gain_skew_factor(-1.0, 1.0),
-                },
-            )
-            .with_smoother(SmoothingStyle::Logarithmic(2.0))
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
-            osc2_offset: IntParam::new(
-                "Osc2 Note Offset",
-                0,
-                IntRange::Linear { min: -96, max: 96 },
-            ),
-            osc2_target: EnumParam::new("Osc2 Target", OscTarget::Filter2),
-
-            // Osc3
-            osc3_level: FloatParam::new(
-                "Osc3 Level",
-                util::db_to_gain(1.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(0.0),
-                    max: util::db_to_gain(1.0),
-                    // This makes the range appear as if it was linear when displaying the values as
-                    // decibels
-                    factor: FloatRange::gain_skew_factor(0.0, 1.0),
-                },
-            )
-            .with_smoother(SmoothingStyle::Logarithmic(1.0))
-            .with_unit(" dB")
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
-            osc3_detune: FloatParam::new(
-                "Osc3 Detune",
-                util::db_to_gain(0.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(-1.0),
-                    max: util::db_to_gain(1.0),
-                    // This makes the range appear as if it was linear when displaying the values as
-                    // decibels
-                    factor: FloatRange::gain_skew_factor(-1.0, 1.0),
-                },
-            )
-            .with_smoother(SmoothingStyle::Logarithmic(2.0))
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(0))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
-            osc3_offset: IntParam::new(
-                "Osc3 Note Offset",
-                0,
-                IntRange::Linear { min: -96, max: 96 },
-            ),
-            osc3_target: EnumParam::new("Osc3 Target", OscTarget::Filter1_2),
         }
     }
 }
@@ -255,22 +253,22 @@ impl Plugin for WtSynth {
         self.params.clone()
     }
 
-    fn initialize(
-        &mut self,
-        _audio_io_layout: &AudioIOLayout,
-        _buffer_config: &BufferConfig,
-        _context: &mut impl InitContext<Self>,
-    ) -> bool {
-        // Resize buffers and perform other potentially expensive initialization operations here.
-        // The `reset()` function is always called right after this function. You can remove this
-        // function if you do not need it.
-        true
-    }
-
-    fn reset(&mut self) {
-        // Reset buffers and envelopes here. This can be called from the audio thread and may not
-        // allocate. You can remove this function if you do not need it.
-    }
+    // fn initialize(
+    //     &mut self,
+    //     _audio_io_layout: &AudioIOLayout,
+    //     _buffer_config: &BufferConfig,
+    //     _context: &mut impl InitContext<Self>,
+    // ) -> bool {
+    //     // Resize buffers and perform other potentially expensive initialization operations here.
+    //     // The `reset()` function is always called right after this function. You can remove this
+    //     // function if you do not need it.
+    //     true
+    // }
+    //
+    // fn reset(&mut self) {
+    //     // Reset buffers and envelopes here. This can be called from the audio thread and may not
+    //     // allocate. You can remove this function if you do not need it.
+    // }
 
     fn process(
         &mut self,
@@ -315,6 +313,12 @@ impl Plugin for WtSynth {
             }
         }
 
+        // set voice parameters
+        self.set_voice_params();
+
+        // reset memo_params
+        self.memo_params = self.params.clone();
+
         for channel_samples in buffer.iter_samples() {
             // Smoothing is optionally built into the parameters themselves
             // let gain = self.params.gain.smoothed.next();
@@ -333,6 +337,131 @@ impl Plugin for WtSynth {
         }
 
         ProcessStatus::Normal
+    }
+}
+
+impl WtSynth {
+    fn set_voice_params(&mut self) {
+        // // Oscilator
+        // self.params
+        //     .osc
+        //     .iter()
+        //     .zip(self.memo_params.osc.iter())
+        //     .enumerate()
+        //     .for_each(|(i, (osc_params, memo_params))| {
+        //         // oscilator level
+        //         {
+        //             let param = osc_params.osc_level.smoothed.next();
+        //
+        //             if param != memo_params.osc_level.smoothed.next() {
+        //                 self.voices.iter().for_each(|voice| {
+        //                     if let Ok(mut voice) = voice.write() {
+        //                         voice.oscs[i].0.level = param;
+        //                     }
+        //                 })
+        //             }
+        //         }
+        //
+        //         // oscilator detune
+        //         {
+        //             let param = osc_params.osc_detune.smoothed.next();
+        //
+        //             if param != memo_params.osc_detune.smoothed.next() {
+        //                 self.voices.iter().for_each(|voice| {
+        //                     if let Ok(mut voice) = voice.write() {
+        //                         voice.oscs[i].0.detune = param;
+        //                     }
+        //                 })
+        //             }
+        //         }
+        //
+        //         // oscilator offset
+        //         {
+        //             let param = osc_params.osc_offset.smoothed.next();
+        //
+        //             if param != memo_params.osc_offset.smoothed.next() {
+        //                 self.voices.iter().for_each(|voice| {
+        //                     if let Ok(mut voice) = voice.write() {
+        //                         voice.oscs[i].0.offset = param as i16;
+        //                     }
+        //                 })
+        //             }
+        //         }
+        //
+        //         // oscilator target
+        //         {
+        //             let param = osc_params.osc_target.value();
+        //
+        //             if param != memo_params.osc_target.value() {
+        //                 self.voices.iter().for_each(|voice| {
+        //                     if let Ok(mut voice) = voice.write() {
+        //                         voice.oscs[i].0.target = param;
+        //                     }
+        //                 })
+        //             }
+        //         }
+        //     });
+
+        // Envelope filter
+        self.params
+            .env
+            .iter()
+            .zip(self.memo_params.env.iter())
+            .enumerate()
+            .for_each(|(i, (env_params, memo_params))| {
+                // Envelope Attack
+                {
+                    let param = env_params.attack.value();
+
+                    if param != memo_params.attack.value() {
+                        self.voices.iter().for_each(|voice| {
+                            if let Ok(mut voice) = voice.write() {
+                                info!("set attack to {}", param);
+                                voice.envs[i].set_atk(param);
+                            }
+                        })
+                    }
+                }
+
+                // Envelope Decay
+                {
+                    let param = env_params.decay.smoothed.next();
+
+                    if param != memo_params.decay.smoothed.next() {
+                        self.voices.iter().for_each(|voice| {
+                            if let Ok(mut voice) = voice.write() {
+                                voice.envs[i].set_decay(param);
+                            }
+                        })
+                    }
+                }
+
+                // Envelope Sustain
+                {
+                    let param = env_params.sustain.smoothed.next();
+
+                    if param != memo_params.sustain.smoothed.next() {
+                        self.voices.iter().for_each(|voice| {
+                            if let Ok(mut voice) = voice.write() {
+                                voice.envs[i].set_sus(param);
+                            }
+                        })
+                    }
+                }
+
+                // Envelope release
+                {
+                    let param = env_params.release.smoothed.next();
+
+                    if param != memo_params.release.smoothed.next() {
+                        self.voices.iter().for_each(|voice| {
+                            if let Ok(mut voice) = voice.write() {
+                                voice.envs[i].set_release(param);
+                            }
+                        })
+                    }
+                }
+            });
     }
 }
 

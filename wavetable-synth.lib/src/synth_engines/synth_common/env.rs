@@ -1,3 +1,4 @@
+use crate::info;
 use crate::{common::EnvParam, config::SAMPLE_RATE, ModulationDest};
 // use log::*;
 
@@ -14,6 +15,20 @@ pub struct ADSR {
     pub base_params: [f32; 5],
     tweek_env_by: [f32; 5],
     env: f32,
+}
+
+impl Default for ADSR {
+    fn default() -> Self {
+        let base_params = [0.0, 0.5, 0.75, 0.5, 0.1];
+
+        Self {
+            sample_rate: SAMPLE_RATE,
+            phase: 0,
+            base_params,
+            tweek_env_by: Self::calc_tweek_by(base_params),
+            env: 0.0,
+        }
+    }
 }
 
 impl ADSR {
@@ -56,6 +71,7 @@ impl ADSR {
     pub fn set_atk(&mut self, atk: f32) {
         // set attack
         self.base_params[ATTACK] = atk.abs();
+        // info!("set attack to {}", self.base_params[ATTACK]);
 
         self.tweek_env_by[ATTACK] = Self::calc_atk(self.base_params[ATTACK]);
     }
