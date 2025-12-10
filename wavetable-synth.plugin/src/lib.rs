@@ -170,11 +170,13 @@ impl FilterParams {
 
 #[derive(Params)]
 struct WtSynthParams {
+    /// parameters for eatch Oscilator
     #[nested(array, group = "OSC")]
+    /// parameters for Envelope Generators
     pub osc: Vec<OscParams>,
     #[nested(array, group = "ENV")]
     pub env: Vec<EnvParams>,
-    // params for filter 1 and 2
+    /// parameters for Filter 1 and 2
     #[nested(array, group = "Filter")]
     pub filter: [FilterParams; 2],
     // TODO: params for lfos goes here
