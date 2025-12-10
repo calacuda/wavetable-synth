@@ -7,4 +7,5 @@ build:
 install: build
   cp -r ./target/bundled/Wt\ Synth.vst3 ~/.vst3
   cp -r ./target/bundled/Wt\ Synth.clap ~/.clap
+  cp -r ./target/bundled/Wt\ Synth ~/.local/bin/wt-synth
 
