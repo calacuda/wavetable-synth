@@ -129,14 +129,55 @@ impl EnvParams {
     }
 }
 
+#[derive(Params, Debug)]
+struct FilterParams {
+    // filter stuff
+    // #[id = "Filter Enabled"]
+    // pub enabled: BoolParam,
+    #[id = "Key Track Enabled"]
+    pub key_track: BoolParam,
+    #[id = "Cutoff"]
+    pub cutoff: FloatParam,
+    #[id = "Resonance"]
+    pub resonance: FloatParam,
+    #[id = "Dry Mix"]
+    pub mix: FloatParam,
+}
+
+impl FilterParams {
+    fn new(i: usize) -> Self {
+        Self {
+            // enabled: BoolParam::new(format!("Filter {i} Enabled"), true),
+            key_track: BoolParam::new(format!("Filter {i} Key Tracking"), true),
+            cutoff: FloatParam::new(
+                format!("Filter {i} Cutoff"),
+                0.5,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            ),
+            resonance: FloatParam::new(
+                format!("Filter {i} Resonance"),
+                0.25,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            ),
+            mix: FloatParam::new(
+                format!("Filter {i} Dry Mix"),
+                0.0,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            ),
+        }
+    }
+}
+
 #[derive(Params)]
 struct WtSynthParams {
     #[nested(array, group = "OSC")]
     pub osc: Vec<OscParams>,
     #[nested(array, group = "ENV")]
     pub env: Vec<EnvParams>,
-    // TODO: add params for filter 1 and 2
-    // TODO: add params for lfos
+    // params for filter 1 and 2
+    #[nested(array, group = "Filter")]
+    pub filter: [FilterParams; 2],
+    // TODO: params for lfos goes here
 }
 
 impl Default for WtSynthParams {
@@ -152,10 +193,10 @@ impl Default for WtSynthParams {
             .enumerate()
             .map(|(i, target)| OscParams::new(i + 1, *target))
             .collect();
-
         let env = (0..N_ENV).map(|i| EnvParams::new(i + 1)).collect();
+        let filter = [FilterParams::new(1), FilterParams::new(2)];
 
-        Self { osc, env }
+        Self { osc, env, filter }
     }
 }
 
@@ -453,6 +494,66 @@ impl WtSynth {
                             if param != voice.envs[i].base_params[RELEASE] {
                                 // info!("set release to {}", param);
                                 voice.envs[i].set_release(param);
+                            }
+                        }
+                    })
+                }
+            });
+
+        // Filters
+        self.params
+            .filter
+            .iter()
+            // .zip(self.memo_params.filter.iter())
+            .enumerate()
+            .for_each(|(i, filter_params)| {
+                // key tracking
+                {
+                    let param = filter_params.key_track.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].key_track {
+                                voice.filters[i].key_track = param;
+                            }
+                        }
+                    })
+                }
+
+                // filter cutoff
+                {
+                    let param = filter_params.cutoff.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].cutoff {
+                                voice.filters[i].cutoff = param;
+                            }
+                        }
+                    })
+                }
+
+                // filter resonance
+                {
+                    let param = filter_params.resonance.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].resonance {
+                                voice.filters[i].resonance = param;
+                            }
+                        }
+                    })
+                }
+
+                // filter dry mix
+                {
+                    let param = filter_params.mix.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].mix {
+                                voice.filters[i].mix = param;
                             }
                         }
                     })

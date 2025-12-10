@@ -118,7 +118,6 @@ pub struct LowPass {
     pub resonance: f32,
     pub mix: f32,
     pub note: f32,
-    // pub range: (f32, f32),
     pub key_track: bool,
     pub cutoff_mod: f32,
     pub res_mod: f32,
