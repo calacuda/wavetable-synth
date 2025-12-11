@@ -6,7 +6,7 @@ use std::{
 };
 use wavetable_synth::{
     common::ModMatrixDest,
-    config::{N_ENV, N_OSC, POLYPHONY, SAMPLE_RATE},
+    config::{N_ENV, N_LFO, N_OSC, POLYPHONY, SAMPLE_RATE},
     synth_engines::{
         synth::{
             build_sine_table,
@@ -169,6 +169,28 @@ impl FilterParams {
 }
 
 #[derive(Params)]
+struct LfoParams {
+    #[id = "Speed"]
+    pub freq: FloatParam,
+    // TODO: Add LFO WaveTable here
+}
+
+impl LfoParams {
+    fn new(i: usize) -> Self {
+        Self {
+            freq: FloatParam::new(
+                format!("LFO {i} frequency"),
+                2.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 20.0,
+                },
+            ),
+        }
+    }
+}
+
+#[derive(Params)]
 struct WtSynthParams {
     /// parameters for eatch Oscilator
     #[nested(array, group = "OSC")]
@@ -179,7 +201,9 @@ struct WtSynthParams {
     /// parameters for Filter 1 and 2
     #[nested(array, group = "Filter")]
     pub filter: [FilterParams; 2],
-    // TODO: params for lfos goes here
+    // params for lfos
+    #[nested(array, group = "LFO")]
+    pub lfo: Vec<LfoParams>,
 }
 
 impl Default for WtSynthParams {
@@ -197,8 +221,14 @@ impl Default for WtSynthParams {
             .collect();
         let env = (0..N_ENV).map(|i| EnvParams::new(i + 1)).collect();
         let filter = [FilterParams::new(1), FilterParams::new(2)];
+        let lfo = (0..N_LFO).map(|i| LfoParams::new(i + 1)).collect();
 
-        Self { osc, env, filter }
+        Self {
+            osc,
+            env,
+            filter,
+            lfo,
+        }
     }
 }
 
@@ -506,7 +536,6 @@ impl WtSynth {
         self.params
             .filter
             .iter()
-            // .zip(self.memo_params.filter.iter())
             .enumerate()
             .for_each(|(i, filter_params)| {
                 // key tracking
@@ -556,6 +585,25 @@ impl WtSynth {
                         if let Ok(mut voice) = voice.write() {
                             if param != voice.filters[i].mix {
                                 voice.filters[i].mix = param;
+                            }
+                        }
+                    })
+                }
+            });
+
+        self.params
+            .lfo
+            .iter()
+            .enumerate()
+            .for_each(|(i, lfo_params)| {
+                // frequency
+                {
+                    let param = lfo_params.freq.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.lfos[i].freq {
+                                voice.lfos[i].set_frequency(param);
                             }
                         }
                     })
