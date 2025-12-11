@@ -1,9 +1,6 @@
 use biquad::*;
-use nih_plug::{log::info, prelude::*};
-use std::{
-    ops::Deref,
-    sync::{Arc, RwLock},
-};
+use nih_plug::prelude::*;
+use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
     config::{N_ENV, N_LFO, N_OSC, POLYPHONY, SAMPLE_RATE},
@@ -18,9 +15,8 @@ use wavetable_synth::{
     ModMatrix,
 };
 
-// This is a shortened version of the gain example with most comments removed, check out
-// https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
-// started
+// This is based on the Gain Example from the nih-plug github, check out
+// https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs for more
 
 pub struct WtSynth {
     params: Arc<WtSynthParams>,
