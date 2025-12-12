@@ -1,5 +1,5 @@
 use biquad::*;
-use nih_plug::prelude::*;
+use nih_plug::{log::info, prelude::*};
 use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
@@ -334,6 +334,8 @@ impl Plugin for WtSynth {
                     note,
                     velocity,
                 } => {
+                    // info!("playing {note}");
+
                     for voice in self.voices.iter() {
                         if let Ok(mut voice) = voice.write() {
                             if voice.playing.is_none() {
