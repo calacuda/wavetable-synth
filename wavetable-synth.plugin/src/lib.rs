@@ -360,6 +360,31 @@ impl Plugin for WtSynth {
                         }
                     }
                 }
+                NoteEvent::MidiPitchBend {
+                    timing: _,
+                    channel: _,
+                    value,
+                } => {
+                    // info!("bend value: {value}");
+
+                    let bend = (value * 2.0) - 1.;
+
+                    // info!("bend 1: {bend}");
+
+                    for voice in self.voices.iter() {
+                        if let Ok(mut voice) = voice.write() {
+                            if voice.playing.is_some() {
+                                voice.oscs.iter_mut().for_each(|(osc, enabled)| {
+                                    // info!("bend 2: {bend}");
+                                    if *enabled {
+                                        // info!("bend 3: {value} => {bend}");
+                                        osc.bend(bend);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
                 _ => {}
             }
         }

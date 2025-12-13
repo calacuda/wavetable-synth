@@ -5,6 +5,7 @@ use crate::{
     midi_to_freq, pow, tanh, ModulationDest, OscWaveTable, SampleGen,
 };
 use core::fmt::Display;
+use log::info;
 use nih_plug::prelude::Enum;
 
 pub const N_OVERTONES: usize = 8;
@@ -174,20 +175,13 @@ impl Oscillator {
     }
 
     pub fn bend(&mut self, bend: f32) {
-        // println!("bending");
-        // let nudge = 2.0_f32.powf((bend * 3.0) / 12.0);
         let nudge = pow(2.0, (bend * 3.0) / 12.0);
-        let new_freq = if bend < 0.0 {
-            self.base_frequency / nudge
-        } else if bend > 0.0 {
+        let new_freq = if bend != 0.0 {
             self.base_frequency * nudge
         } else {
             self.base_frequency
         };
-        // + self.frequency;
         self.osc.set_frequency(new_freq);
-        // println!("frequency => {}", self.frequency);
-        // println!("new_freq => {}", new_freq);
         self.frequency = new_freq;
     }
 
