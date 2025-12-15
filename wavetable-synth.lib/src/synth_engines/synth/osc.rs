@@ -59,7 +59,7 @@ impl WavetableOscillator {
 
     pub fn set_frequency(&mut self, frequency: f32) {
         self.index_increment = frequency * OSC_WAVE_TABLE_SIZE as f32 / self.sample_rate;
-        self.index = 0.0;
+        // self.index = 0.0;
     }
 
     pub fn get_sample(&mut self, wave_table: &[f32]) -> f32 {
