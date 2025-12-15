@@ -284,7 +284,7 @@ impl Plugin for WtSynth {
         names: PortNames::const_default(),
     }];
 
-    const MIDI_INPUT: MidiConfig = MidiConfig::Basic;
+    const MIDI_INPUT: MidiConfig = MidiConfig::MidiCCs;
     const MIDI_OUTPUT: MidiConfig = MidiConfig::None;
 
     const SAMPLE_ACCURATE_AUTOMATION: bool = true;
@@ -384,6 +384,14 @@ impl Plugin for WtSynth {
                             }
                         }
                     }
+                }
+                NoteEvent::MidiCC {
+                    timing: _,
+                    channel: _,
+                    cc: _,
+                    value: _,
+                } => {
+                    // info!("cc: {cc} => {value}");
                 }
                 _ => {}
             }
