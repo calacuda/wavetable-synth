@@ -388,8 +388,8 @@ impl Plugin for WtSynth {
                 NoteEvent::MidiCC {
                     timing: _,
                     channel: _,
-                    cc: _,
-                    value: _,
+                    cc: _cc,
+                    value: _value,
                 } => {
                     // log::info!("cc: {cc} => {value}");
                 }
