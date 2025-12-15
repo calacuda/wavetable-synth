@@ -5,7 +5,6 @@ use crate::{
     midi_to_freq, pow, tanh, ModulationDest, OscWaveTable, SampleGen,
 };
 use core::fmt::Display;
-use log::info;
 use nih_plug::prelude::Enum;
 
 pub const N_OVERTONES: usize = 8;
@@ -120,7 +119,7 @@ impl Oscillator {
         let note = midi_note as i16 + self.offset;
 
         self.frequency = midi_to_freq(note);
-        // warn!("midi note: {note}|{midi_note} => {}", self.frequency);
+        // log::warn!("midi note: {note}|{midi_note} => {}", self.frequency);
         self.base_frequency = self.frequency;
 
         self.osc.set_frequency(self.frequency);
@@ -134,7 +133,7 @@ impl Oscillator {
         // }
         self.detune();
 
-        // info!(
+        // log::info!(
         //     "modulated volume {}, {}",
         //     calculate_modulation(self.level, self.level_mod),
         //     self.level_mod,
@@ -196,20 +195,20 @@ impl ModulationDest for Oscillator {
     type ModTarget = OscParam;
 
     fn modulate(&mut self, what: Self::ModTarget, by: f32) {
-        // info!("modulating {what:?} by {by}");
+        // log::info!("modulating {what:?} by {by}");
 
         match what {
             Self::ModTarget::Level => self.level_mod = by,
             Self::ModTarget::Tune => self.detune_mod = by,
         }
 
-        // info!("{}", self.level_mod);
+        // log::info!("{}", self.level_mod);
     }
 
     fn reset(&mut self) {
-        // info!("resseting");
-        // info!("{}", self.level_mod);
-        // info!(
+        // log::info!("resseting");
+        // log::info!("{}", self.level_mod);
+        // log::info!(
         //     "modulated volume {}, {}",
         //     calculate_modulation(self.level, self.level_mod),
         //     self.level_mod,
