@@ -1,5 +1,5 @@
 use biquad::*;
-use nih_plug::{log::info, prelude::*};
+use nih_plug::prelude::*;
 use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
@@ -334,7 +334,7 @@ impl Plugin for WtSynth {
                     note,
                     velocity,
                 } => {
-                    // info!("playing {note}");
+                    // log::info!("playing {note}");
 
                     for voice in self.voices.iter() {
                         if let Ok(mut voice) = voice.write() {
@@ -365,19 +365,19 @@ impl Plugin for WtSynth {
                     channel: _,
                     value,
                 } => {
-                    // info!("bend value: {value}");
+                    // log::info!("bend value: {value}");
 
                     let bend = (value * 2.0) - 1.;
 
-                    // info!("bend 1: {bend}");
+                    // log::info!("bend 1: {bend}");
 
                     for voice in self.voices.iter() {
                         if let Ok(mut voice) = voice.write() {
                             if voice.playing.is_some() {
                                 voice.oscs.iter_mut().for_each(|(osc, enabled)| {
-                                    // info!("bend 2: {bend}");
+                                    // log::info!("bend 2: {bend}");
                                     if *enabled {
-                                        // info!("bend 3: {value} => {bend}");
+                                        // log::info!("bend 3: {value} => {bend}");
                                         osc.bend(bend);
                                     }
                                 });
@@ -391,7 +391,7 @@ impl Plugin for WtSynth {
                     cc: _,
                     value: _,
                 } => {
-                    // info!("cc: {cc} => {value}");
+                    // log::info!("cc: {cc} => {value}");
                 }
                 _ => {}
             }
@@ -513,7 +513,7 @@ impl WtSynth {
                     self.voices.iter().for_each(|voice| {
                         if let Ok(mut voice) = voice.write() {
                             if param != voice.envs[i].base_params[ATTACK] {
-                                // info!("set attack to {}", param);
+                                // log::info!("set attack to {}", param);
                                 voice.envs[i].set_atk(param);
                             }
                         }
@@ -527,7 +527,7 @@ impl WtSynth {
                     self.voices.iter().for_each(|voice| {
                         if let Ok(mut voice) = voice.write() {
                             if param != voice.envs[i].base_params[DECAY] {
-                                // info!("set decay to {}", param);
+                                // log::info!("set decay to {}", param);
                                 voice.envs[i].set_decay(param);
                             }
                         }
