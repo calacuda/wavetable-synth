@@ -2,8 +2,6 @@ use crate::{
     calculate_modulation, common::LowPassParam, config::SAMPLE_RATE, exp, tanh, ModulationDest,
 };
 use core::f32::consts::PI;
-// use libm::{expf, tanhf};
-use log::{info, warn};
 
 // Moog filter from
 // https://github.com/ddiakopoulos/MoogLadders
@@ -61,7 +59,7 @@ impl HuovilainenMoog {
 
         self.tune = (1.0 - exp(-1.0 * ((2.0 * PI) * f * fcr))) / THERMAL;
 
-        // warn!(
+        // log::warn!(
         //     "{exp} => {} {} {}",
         //     exp.exp(),
         //     expf(exp),
@@ -81,7 +79,7 @@ impl HuovilainenMoog {
         cutoff: f32,
         resonance: f32,
     ) -> f32 {
-        // warn!("in_sample {in_sample}");
+        // log::warn!("in_sample {in_sample}");
         self.compute_coeffs(cutoff, resonance);
 
         // Oversample
@@ -167,7 +165,7 @@ impl LowPass {
         let cutoff = (self.note) + nudge;
         // let cutoff = self.note + self.note * calculate_modulation(self.cutoff, self.cutoff_mod);
 
-        // warn!("res {}", calculate_modulation(self.resonance, self.res_mod));
+        // log::warn!("res {}", calculate_modulation(self.resonance, self.res_mod));
         let mix = calculate_modulation(self.mix, self.mix_mod);
 
         self.filter.process(

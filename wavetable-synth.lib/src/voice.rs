@@ -8,14 +8,13 @@ use crate::{
     midi_to_freq,
     synth_engines::{
         synth::osc::{OscTarget, Oscillator},
-        synth_common::{biquad_filter::BQLowPass, env::ADSR, moog_filter::LowPass},
+        synth_common::{env::ADSR, moog_filter::LowPass},
     },
     ModMatrix, ModulationDest, OscWaveTable, SampleGen,
 };
 use array_macro::array;
 use biquad::{Biquad, Coefficients, DirectForm1, ToHertz, Q_BUTTERWORTH_F32};
 use core::ops::IndexMut;
-use log::*;
 
 // const U32: f32 = u32::MAX as f32 * 0.5;
 
@@ -46,7 +45,7 @@ pub struct Voice {
     pub lfos: [LFO; N_LFO],
     /// filters
     pub filters: [LowPass; 2],
-    // pub filters: [BQLowPass; 2],
+    // pub filters: [crate::synth_common::biquad_filter::BQLowPass; 2],
     /// what notes this voice is playing
     pub playing: Option<u8>,
     /// effects, holds the effect and if its one or not
@@ -85,13 +84,13 @@ impl Voice {
 
         for i in 0..N_OSC {
             oscs.index_mut(i).0.target = targets[i];
-            // info!("{:?}", targets[i]);
-            // info!("{:?}", oscs.index_mut(i).0.target);
+            // log::info!("{:?}", targets[i]);
+            // log::info!("{:?}", oscs.index_mut(i).0.target);
         }
         let f0 = 440.hz();
         let fs = SAMPLE_RATE.hz();
 
-        // info!("{oscs:?}");
+        // log::info!("{oscs:?}");
         let coeffs =
             Coefficients::<f32>::from_params(biquad::Type::AllPass, fs, f0, Q_BUTTERWORTH_F32)
                 .unwrap();
@@ -115,6 +114,8 @@ impl Voice {
 
     #[cfg(feature = "embeded")]
     pub fn new_2(wave_table: OscWaveTable) -> Self {
+        use crate::synth_common::biquad_filter::BQLowPass;
+
         let effects = [
             (EffectsModule::Chorus(Chorus::new()), false),
             // (EffectsModule::Reverb(Reverb::new()), false),
@@ -149,7 +150,7 @@ impl Voice {
         let f0 = 440.hz();
         let fs = SAMPLE_RATE.hz();
 
-        // info!("{oscs:?}");
+        // log::info!("{oscs:?}");
         let coeffs =
             Coefficients::<f32>::from_params(biquad::Type::AllPass, fs, f0, Q_BUTTERWORTH_F32)
                 .unwrap();
@@ -178,7 +179,7 @@ impl Voice {
     }
 
     pub fn press(&mut self, midi_note: u8, velocity: u8) {
-        // info!("velocity => {velocity}");
+        // log::info!("velocity => {velocity}");
         self.oscs.iter_mut().for_each(|osc| {
             if osc.1 {
                 osc.0.press(midi_note)
@@ -232,7 +233,7 @@ impl Voice {
 
     /// send data from data_table where ever it needs to go, based on the mod_natrix
     pub fn route_mod_matrix(&mut self, mod_matrix: &ModMatrix) {
-        // info!("{:?}", self.data_table.velocity);
+        // log::info!("{:?}", self.data_table.velocity);
 
         // for mod_entry in mod_matrix {
         mod_matrix.iter().for_each(|mod_entry| {
@@ -244,7 +245,7 @@ impl Voice {
                     amt -= entry.amt / 2.0;
                 }
 
-                // info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
+                // log::info!("src {:?}, amt {}, dest {:?}", entry.src, amt, entry.dest);
 
                 match entry.dest {
                     ModMatrixDest::ModMatrixEntryModAmt(mod_amt_amt) => {
@@ -363,7 +364,7 @@ impl Voice {
 
         // an allpass filter.
         let sample = output * self.data_table.env[0];
-        // warn!("{}", get_u32_sample(Some(sample)));
+        // log::warn!("{}", get_u32_sample(Some(sample)));
 
         self.all_pass.run(sample)
 
