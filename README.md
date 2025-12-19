@@ -12,6 +12,6 @@ Wavetable audio synthesis library written in rust. supports LFOs, filters, & a f
 
 # Lib TODOs
 
-- [ ] enable detune
-- [ ] enable mod matrix routing
+- [x] enable detune
+- [x] enable mod matrix routing
 - [ ] add Macros

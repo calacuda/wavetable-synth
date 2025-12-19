@@ -146,7 +146,7 @@ impl Oscillator {
     }
 
     pub fn detune(&mut self) {
-        // println!("bending");
+        // println!("detuning");
         if self.detune == 0.0 && self.detune_mod == 0.0 {
             return;
         }
