@@ -23,7 +23,7 @@ biquad = "0.5.0"
 # ] }
 nih_plug = { git = "https://github.com/calacuda/nih-plug.git", features = [
   "assert_process_allocs",
-  "standalone",
+  # "standalone",
 ] }
 wavetable-synth = { version = "0.1.1", path = "../wavetable-synth.lib/", features = [
   "desktop",

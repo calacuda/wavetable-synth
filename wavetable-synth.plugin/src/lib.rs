@@ -1,5 +1,8 @@
 use biquad::*;
-use nih_plug::prelude::*;
+use nih_plug::{
+    log::{debug, info},
+    prelude::*,
+};
 use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
@@ -250,6 +253,9 @@ impl Default for WtSynth {
         // voices[0].write().unwrap().press(48, 100);
         let params = || WtSynthParams::default();
 
+        // println!("made");
+        // info!("made");
+
         Self {
             params: Arc::new(params()),
             memo_params: Arc::new(params()),
@@ -302,18 +308,21 @@ impl Plugin for WtSynth {
         self.params.clone()
     }
 
-    // fn initialize(
-    //     &mut self,
-    //     _audio_io_layout: &AudioIOLayout,
-    //     _buffer_config: &BufferConfig,
-    //     _context: &mut impl InitContext<Self>,
-    // ) -> bool {
-    //     // Resize buffers and perform other potentially expensive initialization operations here.
-    //     // The `reset()` function is always called right after this function. You can remove this
-    //     // function if you do not need it.
-    //     true
-    // }
-    //
+    fn initialize(
+        &mut self,
+        _audio_io_layout: &AudioIOLayout,
+        _buffer_config: &BufferConfig,
+        _context: &mut impl InitContext<Self>,
+    ) -> bool {
+        // Resize buffers and perform other potentially expensive initialization operations here.
+        // The `reset()` function is always called right after this function. You can remove this
+        // function if you do not need it.
+        // println!("inited");
+        debug!("inited");
+
+        true
+    }
+
     // fn reset(&mut self) {
     //     // Reset buffers and envelopes here. This can be called from the audio thread and may not
     //     // allocate. You can remove this function if you do not need it.
@@ -326,6 +335,8 @@ impl Plugin for WtSynth {
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
         while let Some(event) = context.next_event() {
+            // info!("recieved event");
+
             match event {
                 NoteEvent::NoteOn {
                     timing: _,
@@ -334,7 +345,7 @@ impl Plugin for WtSynth {
                     note,
                     velocity,
                 } => {
-                    // log::info!("playing {note}");
+                    // info!("playing {note}");
 
                     for voice in self.voices.iter() {
                         if let Ok(mut voice) = voice.write() {
@@ -650,15 +661,22 @@ impl ClapPlugin for WtSynth {
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
 
     // Don't forget to change these features
-    const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::Synthesizer, ClapFeature::Mono];
+    const CLAP_FEATURES: &'static [ClapFeature] = &[
+        ClapFeature::Instrument,
+        ClapFeature::Synthesizer,
+        ClapFeature::Mono,
+    ];
 }
 
 impl Vst3Plugin for WtSynth {
     const VST3_CLASS_ID: [u8; 16] = *b"WtSynthPlugin\0\0\0";
 
     // And also don't forget to change these categories
-    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] =
-        &[Vst3SubCategory::Synth, Vst3SubCategory::Mono];
+    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[
+        Vst3SubCategory::Instrument,
+        Vst3SubCategory::Synth,
+        Vst3SubCategory::Mono,
+    ];
 }
 
 nih_export_clap!(WtSynth);

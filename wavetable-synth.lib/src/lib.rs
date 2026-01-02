@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(stmt_expr_attributes)]
+// #![feature(stmt_expr_attributes)]
 #[cfg(feature = "embeded")]
 extern crate alloc;
 #[cfg(feature = "embeded")]
