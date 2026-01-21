@@ -27,18 +27,28 @@ jobs:
         include:
           - target: x86_64-pc-windows-gnu
             system: windows
+            toolchain: nightly
           - target: x86_64-unknown-linux-musl
             system: linux
+            toolchain: nightly
           - target: x86_64-apple-darwin
             system: mac-os-x86
+            toolchain: nightly
 
     steps:
       - uses: actions/checkout@v4
+      - name: Use Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          # Caches target directory and Cargo home
+          key: ${{ runner.os }}-${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}
       - name: install deps
         run: "
         sudo apt update;
         sudo apt install libasound2-dev zip;
         "
+      - name: kill standalone (rm once GUI is written)
+        run: rm ./src/main.rs
       - name: Build
         run: cargo xtask bundle wt_synth --release  
       - name: Create zip
