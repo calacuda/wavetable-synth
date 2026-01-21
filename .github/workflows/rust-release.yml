@@ -46,12 +46,22 @@ jobs:
       - name: kill standalone (rm once GUI is written)
         run: rm ./src/main.rs
       - name: Build
-        run: cargo xtask bundle wt_synth --release  
+        run: cargo xtask bundle wt_synth --release --target ${{ matrix.target }} 
       - name: Create zip
         run: zip -r wt-synth-${{ matrix.system }}.zip  target/bundled/*
-      - name: Create Release and Upload Artifact
-        uses: softprops/action-gh-release@v2
+      # - name: Create Release and Upload Artifact
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: ${{ github.event.release.tag_name }}
+      #     files: wt-synth-${{ matrix.system }}.zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
         with:
-          files: wt-synth-${{ matrix.system }}.zip
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./wt-synth-${{ matrix.system }}.zip
+          asset_name: wt-synth-${{ matrix.system }}.zip
+          asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
