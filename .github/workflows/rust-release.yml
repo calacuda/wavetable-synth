@@ -4,6 +4,8 @@ on:
   workflow_dispatch: 
   push:
     branches: [ "main" ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ "main" ]
 
@@ -14,28 +16,36 @@ jobs:
   release:
     name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: ./wavetable-synth.plugin
     strategy:
       fail-fast: false
       matrix:
         include:
           - target: x86_64-pc-windows-gnu
-            archive: zip
+            system: windows
           - target: x86_64-unknown-linux-musl
-            archive: tar.gz tar.xz tar.zst
+            system: linux
           - target: x86_64-apple-darwin
-            archive: zip
+            system: mac-os-x86
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cd ./wavetable-synth.plugin && cargo build --verbose
-    - name: Rust Release binary
-      # You may pin to the exact commit or the version.
-      # uses: rust-build/rust-build.action@6febf1b0ed6499a46610b58ef9d810398e75f3c2
-      uses: rust-build/rust-build.action@v1.4.5
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SRC_DIR: wavetable-synth.plugin
-      with:
-        RUSTTARGET: ${{ matrix.target }}
-        ARCHIVE_TYPES: ${{ matrix.archive }}
+      - uses: actions/checkout@v4
+      - name: install deps
+        run: "
+        sudo apt update
+        sudo apt install libasound2-dev zip
+        "
+      - name: Build
+        run: cargo xtask bundle wt_synth --release  
+      - name: Create zip
+        run: zip -r wt-synth-{{matrix.system}}.zip  target/bundled/Wt\ Synth
+      - name: Create Release and Upload Artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wt-synth-{{matrix.system}}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
