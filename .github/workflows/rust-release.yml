@@ -52,7 +52,7 @@ jobs:
       - name: Build
         run: cargo xtask bundle wt_synth --release  
       - name: Create zip
-        run: zip -r wt-synth-${{ matrix.system }}.zip  ./target/bundled/Wt\ Synth
+        run: zip wt-synth-${{ matrix.system }}.zip  "target/bundled/*"
       - name: Create Release and Upload Artifact
         uses: softprops/action-gh-release@v2
         with:
