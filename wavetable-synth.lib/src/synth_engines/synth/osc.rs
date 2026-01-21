@@ -58,7 +58,7 @@ impl WavetableOscillator {
 
     pub fn set_frequency(&mut self, frequency: f32) {
         self.index_increment = frequency * OSC_WAVE_TABLE_SIZE as f32 / self.sample_rate;
-        self.index = 0.0;
+        // self.index = 0.0;
     }
 
     pub fn get_sample(&mut self, wave_table: &[f32]) -> f32 {
@@ -119,7 +119,7 @@ impl Oscillator {
         let note = midi_note as i16 + self.offset;
 
         self.frequency = midi_to_freq(note);
-        // warn!("midi note: {note}|{midi_note} => {}", self.frequency);
+        // log::warn!("midi note: {note}|{midi_note} => {}", self.frequency);
         self.base_frequency = self.frequency;
 
         self.osc.set_frequency(self.frequency);
@@ -133,7 +133,7 @@ impl Oscillator {
         // }
         self.detune();
 
-        // info!(
+        // log::info!(
         //     "modulated volume {}, {}",
         //     calculate_modulation(self.level, self.level_mod),
         //     self.level_mod,
@@ -146,7 +146,7 @@ impl Oscillator {
     }
 
     pub fn detune(&mut self) {
-        // println!("bending");
+        // println!("detuning");
         if self.detune == 0.0 && self.detune_mod == 0.0 {
             return;
         }
@@ -174,20 +174,13 @@ impl Oscillator {
     }
 
     pub fn bend(&mut self, bend: f32) {
-        // println!("bending");
-        // let nudge = 2.0_f32.powf((bend * 3.0) / 12.0);
         let nudge = pow(2.0, (bend * 3.0) / 12.0);
-        let new_freq = if bend < 0.0 {
-            self.base_frequency / nudge
-        } else if bend > 0.0 {
+        let new_freq = if bend != 0.0 {
             self.base_frequency * nudge
         } else {
             self.base_frequency
         };
-        // + self.frequency;
         self.osc.set_frequency(new_freq);
-        // println!("frequency => {}", self.frequency);
-        // println!("new_freq => {}", new_freq);
         self.frequency = new_freq;
     }
 
@@ -202,20 +195,20 @@ impl ModulationDest for Oscillator {
     type ModTarget = OscParam;
 
     fn modulate(&mut self, what: Self::ModTarget, by: f32) {
-        // info!("modulating {what:?} by {by}");
+        // log::info!("modulating {what:?} by {by}");
 
         match what {
             Self::ModTarget::Level => self.level_mod = by,
             Self::ModTarget::Tune => self.detune_mod = by,
         }
 
-        // info!("{}", self.level_mod);
+        // log::info!("{}", self.level_mod);
     }
 
     fn reset(&mut self) {
-        // info!("resseting");
-        // info!("{}", self.level_mod);
-        // info!(
+        // log::info!("resseting");
+        // log::info!("{}", self.level_mod);
+        // log::info!(
         //     "modulated volume {}, {}",
         //     calculate_modulation(self.level, self.level_mod),
         //     self.level_mod,

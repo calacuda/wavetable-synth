@@ -1,4 +1,3 @@
-// use my_plugin::MyPlugin;
 use nih_plug::prelude::*;
 use wt_synth::WtSynth;
 
@@ -6,4 +5,5 @@ use wt_synth::WtSynth;
 
 fn main() {
     nih_export_standalone::<WtSynth>();
+    // println!("Nope");
 }

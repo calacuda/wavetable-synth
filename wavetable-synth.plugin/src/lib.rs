@@ -1,12 +1,12 @@
 use biquad::*;
-use nih_plug::{log::info, prelude::*};
-use std::{
-    ops::Deref,
-    sync::{Arc, RwLock},
+use nih_plug::{
+    log::{debug, info},
+    prelude::*,
 };
+use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
-    config::{N_ENV, N_OSC, POLYPHONY, SAMPLE_RATE},
+    config::{N_ENV, N_LFO, N_OSC, POLYPHONY, SAMPLE_RATE},
     synth_engines::{
         synth::{
             build_sine_table,
@@ -18,9 +18,8 @@ use wavetable_synth::{
     ModMatrix,
 };
 
-// This is a shortened version of the gain example with most comments removed, check out
-// https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
-// started
+// This is based on the Gain Example from the nih-plug github, check out
+// https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs for more
 
 pub struct WtSynth {
     params: Arc<WtSynthParams>,
@@ -129,14 +128,81 @@ impl EnvParams {
     }
 }
 
+#[derive(Params, Debug)]
+struct FilterParams {
+    // filter stuff
+    // #[id = "Filter Enabled"]
+    // pub enabled: BoolParam,
+    #[id = "Key Track Enabled"]
+    pub key_track: BoolParam,
+    #[id = "Cutoff"]
+    pub cutoff: FloatParam,
+    #[id = "Resonance"]
+    pub resonance: FloatParam,
+    #[id = "Dry Mix"]
+    pub mix: FloatParam,
+}
+
+impl FilterParams {
+    fn new(i: usize) -> Self {
+        Self {
+            // enabled: BoolParam::new(format!("Filter {i} Enabled"), true),
+            key_track: BoolParam::new(format!("Filter {i} Key Tracking"), true),
+            cutoff: FloatParam::new(
+                format!("Filter {i} Cutoff"),
+                0.5,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            ),
+            resonance: FloatParam::new(
+                format!("Filter {i} Resonance"),
+                0.25,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            ),
+            mix: FloatParam::new(
+                format!("Filter {i} Dry Mix"),
+                0.0,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            ),
+        }
+    }
+}
+
+#[derive(Params)]
+struct LfoParams {
+    #[id = "Speed"]
+    pub freq: FloatParam,
+    // TODO: Add LFO WaveTable here
+}
+
+impl LfoParams {
+    fn new(i: usize) -> Self {
+        Self {
+            freq: FloatParam::new(
+                format!("LFO {i} frequency"),
+                2.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 20.0,
+                },
+            ),
+        }
+    }
+}
+
 #[derive(Params)]
 struct WtSynthParams {
+    /// parameters for eatch Oscilator
     #[nested(array, group = "OSC")]
+    /// parameters for Envelope Generators
     pub osc: Vec<OscParams>,
     #[nested(array, group = "ENV")]
     pub env: Vec<EnvParams>,
-    // TODO: add params for filter 1 and 2
-    // TODO: add params for lfos
+    /// parameters for Filter 1 and 2
+    #[nested(array, group = "Filter")]
+    pub filter: [FilterParams; 2],
+    // params for lfos
+    #[nested(array, group = "LFO")]
+    pub lfo: Vec<LfoParams>,
 }
 
 impl Default for WtSynthParams {
@@ -152,10 +218,16 @@ impl Default for WtSynthParams {
             .enumerate()
             .map(|(i, target)| OscParams::new(i + 1, *target))
             .collect();
-
         let env = (0..N_ENV).map(|i| EnvParams::new(i + 1)).collect();
+        let filter = [FilterParams::new(1), FilterParams::new(2)];
+        let lfo = (0..N_LFO).map(|i| LfoParams::new(i + 1)).collect();
 
-        Self { osc, env }
+        Self {
+            osc,
+            env,
+            filter,
+            lfo,
+        }
     }
 }
 
@@ -180,6 +252,9 @@ impl Default for WtSynth {
 
         // voices[0].write().unwrap().press(48, 100);
         let params = || WtSynthParams::default();
+
+        // println!("made");
+        // info!("made");
 
         Self {
             params: Arc::new(params()),
@@ -215,7 +290,7 @@ impl Plugin for WtSynth {
         names: PortNames::const_default(),
     }];
 
-    const MIDI_INPUT: MidiConfig = MidiConfig::Basic;
+    const MIDI_INPUT: MidiConfig = MidiConfig::MidiCCs;
     const MIDI_OUTPUT: MidiConfig = MidiConfig::None;
 
     const SAMPLE_ACCURATE_AUTOMATION: bool = true;
@@ -233,18 +308,21 @@ impl Plugin for WtSynth {
         self.params.clone()
     }
 
-    // fn initialize(
-    //     &mut self,
-    //     _audio_io_layout: &AudioIOLayout,
-    //     _buffer_config: &BufferConfig,
-    //     _context: &mut impl InitContext<Self>,
-    // ) -> bool {
-    //     // Resize buffers and perform other potentially expensive initialization operations here.
-    //     // The `reset()` function is always called right after this function. You can remove this
-    //     // function if you do not need it.
-    //     true
-    // }
-    //
+    fn initialize(
+        &mut self,
+        _audio_io_layout: &AudioIOLayout,
+        _buffer_config: &BufferConfig,
+        _context: &mut impl InitContext<Self>,
+    ) -> bool {
+        // Resize buffers and perform other potentially expensive initialization operations here.
+        // The `reset()` function is always called right after this function. You can remove this
+        // function if you do not need it.
+        // println!("inited");
+        debug!("inited");
+
+        true
+    }
+
     // fn reset(&mut self) {
     //     // Reset buffers and envelopes here. This can be called from the audio thread and may not
     //     // allocate. You can remove this function if you do not need it.
@@ -257,6 +335,8 @@ impl Plugin for WtSynth {
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
         while let Some(event) = context.next_event() {
+            // info!("recieved event");
+
             match event {
                 NoteEvent::NoteOn {
                     timing: _,
@@ -265,6 +345,8 @@ impl Plugin for WtSynth {
                     note,
                     velocity,
                 } => {
+                    // info!("playing {note}");
+
                     for voice in self.voices.iter() {
                         if let Ok(mut voice) = voice.write() {
                             if voice.playing.is_none() {
@@ -288,6 +370,39 @@ impl Plugin for WtSynth {
                             }
                         }
                     }
+                }
+                NoteEvent::MidiPitchBend {
+                    timing: _,
+                    channel: _,
+                    value,
+                } => {
+                    // log::info!("bend value: {value}");
+
+                    let bend = (value * 2.0) - 1.;
+
+                    // log::info!("bend 1: {bend}");
+
+                    for voice in self.voices.iter() {
+                        if let Ok(mut voice) = voice.write() {
+                            if voice.playing.is_some() {
+                                voice.oscs.iter_mut().for_each(|(osc, enabled)| {
+                                    // log::info!("bend 2: {bend}");
+                                    if *enabled {
+                                        // log::info!("bend 3: {value} => {bend}");
+                                        osc.bend(bend);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+                NoteEvent::MidiCC {
+                    timing: _,
+                    channel: _,
+                    cc: _cc,
+                    value: _value,
+                } => {
+                    // log::info!("cc: {cc} => {value}");
                 }
                 _ => {}
             }
@@ -409,7 +524,7 @@ impl WtSynth {
                     self.voices.iter().for_each(|voice| {
                         if let Ok(mut voice) = voice.write() {
                             if param != voice.envs[i].base_params[ATTACK] {
-                                // info!("set attack to {}", param);
+                                // log::info!("set attack to {}", param);
                                 voice.envs[i].set_atk(param);
                             }
                         }
@@ -423,7 +538,7 @@ impl WtSynth {
                     self.voices.iter().for_each(|voice| {
                         if let Ok(mut voice) = voice.write() {
                             if param != voice.envs[i].base_params[DECAY] {
-                                // info!("set decay to {}", param);
+                                // log::info!("set decay to {}", param);
                                 voice.envs[i].set_decay(param);
                             }
                         }
@@ -458,6 +573,84 @@ impl WtSynth {
                     })
                 }
             });
+
+        // Filters
+        self.params
+            .filter
+            .iter()
+            .enumerate()
+            .for_each(|(i, filter_params)| {
+                // key tracking
+                {
+                    let param = filter_params.key_track.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].key_track {
+                                voice.filters[i].key_track = param;
+                            }
+                        }
+                    })
+                }
+
+                // filter cutoff
+                {
+                    let param = filter_params.cutoff.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].cutoff {
+                                voice.filters[i].cutoff = param;
+                            }
+                        }
+                    })
+                }
+
+                // filter resonance
+                {
+                    let param = filter_params.resonance.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].resonance {
+                                voice.filters[i].resonance = param;
+                            }
+                        }
+                    })
+                }
+
+                // filter dry mix
+                {
+                    let param = filter_params.mix.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.filters[i].mix {
+                                voice.filters[i].mix = param;
+                            }
+                        }
+                    })
+                }
+            });
+
+        self.params
+            .lfo
+            .iter()
+            .enumerate()
+            .for_each(|(i, lfo_params)| {
+                // frequency
+                {
+                    let param = lfo_params.freq.value();
+
+                    self.voices.iter().for_each(|voice| {
+                        if let Ok(mut voice) = voice.write() {
+                            if param != voice.lfos[i].freq {
+                                voice.lfos[i].set_frequency(param);
+                            }
+                        }
+                    })
+                }
+            });
     }
 }
 
@@ -468,15 +661,22 @@ impl ClapPlugin for WtSynth {
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
 
     // Don't forget to change these features
-    const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::Synthesizer, ClapFeature::Mono];
+    const CLAP_FEATURES: &'static [ClapFeature] = &[
+        ClapFeature::Instrument,
+        ClapFeature::Synthesizer,
+        ClapFeature::Mono,
+    ];
 }
 
 impl Vst3Plugin for WtSynth {
     const VST3_CLASS_ID: [u8; 16] = *b"WtSynthPlugin\0\0\0";
 
     // And also don't forget to change these categories
-    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] =
-        &[Vst3SubCategory::Synth, Vst3SubCategory::Mono];
+    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[
+        Vst3SubCategory::Instrument,
+        Vst3SubCategory::Synth,
+        Vst3SubCategory::Mono,
+    ];
 }
 
 nih_export_clap!(WtSynth);

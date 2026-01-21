@@ -5,17 +5,8 @@ edition = "2021"
 
 [features]
 default = ["desktop"]
-desktop = [
-  "dep:midir",
-  "dep:fxhash",
-  "dep:fern",
-  "dep:midi-control",
-  "std",
-]
-embeded = [
-  "dep:libm",
-  "heapless",
-]
+desktop = ["dep:midir", "dep:fxhash", "dep:fern", "dep:midi-control", "std"]
+embeded = ["dep:libm", "heapless"]
 std = []
 heapless = ["dep:heapless"]
 
@@ -28,10 +19,13 @@ fern = { version = "0.7.1", features = ["colored"], optional = true }
 fxhash = { version = "0.2.1", optional = true }
 heapless = { version = "0.8.0", optional = true }
 libm = { version = "0.2.11", optional = true }
-log = { version = "0.4.25", features = ["max_level_info", "release_max_level_info"] }
+log = { version = "0.4.25", features = [
+  "max_level_info",
+  "release_max_level_info",
+] }
 midi-control = { version = "0.2.2", default-features = false, optional = true }
 midir = { version = "0.10.1", optional = true }
-nih_plug = { git = "https://github.com/robbert-vdh/nih-plug", version = "0.0.0", default-features = false }
+nih_plug = { git = "https://github.com/calacuda/nih-plug", version = "0.0.0", default-features = false }
 # reverb = "1.0.47"
 serde = { version = "1.0.217", features = ["derive"], default-features = false }
 strum = { version = "0.26.3", features = ["derive"], default-features = false }
@@ -43,5 +37,3 @@ tinyaudio = "1.1.0"
 name = "desktop-cli"
 doc-scrape-examples = true
 required-features = ["desktop"]
-
-

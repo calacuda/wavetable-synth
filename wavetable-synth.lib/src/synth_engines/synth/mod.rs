@@ -1,10 +1,8 @@
 use crate::{
     config::{OSC_WAVE_TABLE_SIZE, SAMPLE_RATE},
-    sin, tanh, OscWaveTable,
+    sin, OscWaveTable,
 };
-use biquad::{
-    Biquad, Coefficients, DirectForm1, DirectForm2Transposed, ToHertz, Q_BUTTERWORTH_F32,
-};
+use biquad::{Biquad, Coefficients, DirectForm2Transposed, ToHertz, Q_BUTTERWORTH_F32};
 
 pub const N_OVERTONES_SAW: usize = 4;
 
@@ -14,7 +12,7 @@ pub fn build_sine_table(overtones: &[f64]) -> OscWaveTable {
     let f0 = 440.hz();
     let fs = SAMPLE_RATE.hz();
 
-    // info!("{oscs:?}");
+    // log::info!("{oscs:?}");
     let coeffs =
         Coefficients::<f32>::from_params(biquad::Type::AllPass, fs, f0, Q_BUTTERWORTH_F32).unwrap();
 

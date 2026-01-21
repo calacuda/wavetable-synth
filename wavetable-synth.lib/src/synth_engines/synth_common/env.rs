@@ -1,4 +1,3 @@
-use crate::info;
 use crate::{common::EnvParam, config::SAMPLE_RATE, ModulationDest};
 // use log::*;
 
@@ -71,7 +70,7 @@ impl ADSR {
     pub fn set_atk(&mut self, atk: f32) {
         // set attack
         self.base_params[ATTACK] = atk.abs();
-        // info!("set attack to {}", self.base_params[ATTACK]);
+        // crate::log::info!("set attack to {}", self.base_params[ATTACK]);
 
         self.tweek_env_by[ATTACK] = Self::calc_atk(self.base_params[ATTACK]);
     }
@@ -134,7 +133,7 @@ impl ADSR {
         // self.env = self.base_params[SUSTAIN];
         self.tweek_env_by[RELEASE] = Self::calc_release(self.base_params[RELEASE], 1.0 - self.env);
 
-        // info!("key released. base release time {}");
+        // crate::log::info!("key released. base release time {}");
     }
 
     /// returns true if the env filter is not released

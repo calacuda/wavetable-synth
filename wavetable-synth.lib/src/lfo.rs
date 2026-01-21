@@ -15,8 +15,8 @@ pub struct LfoWaveTableOsc {
     freq: f32,
 }
 
-impl LfoWaveTableOsc {
-    pub fn new() -> Self {
+impl Default for LfoWaveTableOsc {
+    fn default() -> Self {
         Self {
             sample_rate: SAMPLE_RATE as f32,
             index: 0.0,
@@ -24,6 +24,12 @@ impl LfoWaveTableOsc {
             wave_table_len: LFO_WAVE_TABLE_SIZE as f32,
             freq: 2.0,
         }
+    }
+}
+
+impl LfoWaveTableOsc {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn set_frequency(&mut self, frequency: f32) {
@@ -77,8 +83,8 @@ pub struct LFO {
     playing: bool,
 }
 
-impl LFO {
-    pub fn new() -> Self {
+impl Default for LFO {
+    fn default() -> Self {
         let wave_table = mk_default_lfo_wt();
 
         Self {
@@ -88,6 +94,12 @@ impl LFO {
             osc: LfoWaveTableOsc::new(),
             playing: false,
         }
+    }
+}
+
+impl LFO {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn get_sample(&mut self) -> f32 {
