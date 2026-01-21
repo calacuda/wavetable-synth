@@ -42,7 +42,7 @@ jobs:
         run: "
         sudo apt update;
         sudo apt install libasound2-dev zip;
-        rustup target add ${{ matrix.system }}
+        rustup target add ${{ matrix.target }}
         "
       - name: kill standalone (rm once GUI is written)
         run: rm ./src/main.rs
