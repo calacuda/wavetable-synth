@@ -28,21 +28,21 @@ jobs:
             toolchain: stable
             runs-on: windows-latest
             install-deps: ""
-            zip: "Compress-Archive -Path 'target/bundled/*' -DestinationPath wt-synth-windows.zip"
+            # zip: "Compress-Archive -Path 'target/bundled/*' -DestinationPath wt-synth-windows.zip"
           - target: x86_64-unknown-linux-gnu
             system: linux
             # toolchain: nightly
             toolchain: stable
             runs-on: ubuntu-latest
             install-deps: "sudo apt update; sudo apt install libasound2-dev zip"
-            zip: "zip -r wt-synth-linux.zip  target/bundled/*"
+            # zip: "zip -r wt-synth-linux.zip  target/bundled/*"
           - target: x86_64-apple-darwin
             system: mac-os-arm
             # toolchain: nightly
             toolchain: stable
             runs-on: macos-latest
             install-deps: ""
-            zip: "zip -r wt-synth-mac-os-arm.zip  target/bundled/*"
+            # zip: "zip -r wt-synth-mac-os-arm.zip  target/bundled/*"
 
     steps:
       - uses: actions/checkout@v4
@@ -62,12 +62,12 @@ jobs:
       #   run: ${{ matrix.zip }}
       
       - name: Archive Release
-        uses: thedoctor0/zip-release@0.7.5
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
-          directory: wavetable-synth.plugin
+          directory: 'wavetable-synth.plugin'
           filename: 'wt-synth-${{ matrix.system }}.zip'
-          path: ./target/bundle/
+          path: 'target/bundle'
 
       # - name: Create Release and Upload Artifact
       #   uses: softprops/action-gh-release@v2
