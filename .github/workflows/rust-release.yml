@@ -67,7 +67,7 @@ jobs:
           type: 'zip'
           directory: 'wavetable-synth.plugin'
           filename: 'wt-synth-${{ matrix.system }}.zip'
-          path: 'target/bundle'
+          path: 'target/bundled/'
 
       # - name: Create Release and Upload Artifact
       #   uses: softprops/action-gh-release@v2
