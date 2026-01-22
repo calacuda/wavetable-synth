@@ -11,7 +11,8 @@ env:
 jobs:
   release:
     name: release ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: write
     defaults:
@@ -23,13 +24,19 @@ jobs:
         include:
           - target: x86_64-pc-windows-gnu
             system: windows
-            toolchain: nightly
-          - target: x86_64-unknown-linux-musl
+            # toolchain: nightly
+            toolchain: stable
+            runs-on: windows-latest
+          - target: x86_64-unknown-linux-gnu
             system: linux
-            toolchain: nightly
+            # toolchain: nightly
+            toolchain: stable
+            runs-on: ubuntu-latest
           - target: x86_64-apple-darwin
             system: mac-os-x86
-            toolchain: nightly
+            # toolchain: nightly
+            toolchain: stable
+            runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +48,8 @@ jobs:
       - name: install deps
         run: "
         sudo apt update;
-        sudo apt install libasound2-dev zip;
-        rustup target add ${{ matrix.target }}
+        sudo apt install libasound2-dev zip mingw-w64;
+        # rustup target add ${{ matrix.target }}
         "
       - name: kill standalone (rm once GUI is written)
         run: rm ./src/main.rs
