@@ -56,7 +56,7 @@ jobs:
       - name: kill standalone (rm once GUI is written)
         run: rm ./src/main.rs
       - name: Build
-        run: cargo xtask bundle wt_synth --release --target ${{ matrix.target }} 
+        run: cargo xtask bundle wt_synth --release
 
       # - name: Create zip
       #   run: ${{ matrix.zip }}
