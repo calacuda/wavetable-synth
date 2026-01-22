@@ -65,6 +65,7 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
+          directory: wavetable-synth.plugin
           filename: 'wt-synth-${{ matrix.system }}.zip'
           path: ./target/bundle/
 
