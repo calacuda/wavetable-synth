@@ -65,7 +65,7 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: 'wt-synth-${{ matrix.target }}.zip'
+          filename: 'wt-synth-${{ matrix.system }}.zip'
           path: ./target/bundle/
 
       # - name: Create Release and Upload Artifact
