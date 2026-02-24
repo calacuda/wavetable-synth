@@ -1,8 +1,5 @@
 use biquad::*;
-use nih_plug::{
-    log::{debug, info},
-    prelude::*,
-};
+use nih_plug::{log::*, prelude::*};
 use std::sync::{Arc, RwLock};
 use wavetable_synth::{
     common::ModMatrixDest,
