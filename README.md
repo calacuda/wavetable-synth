@@ -1,15 +1,15 @@
 # wavetable-synth
 
-Wavetable audio synthesis crate and plugin written in rust. supports LFOs, Envelopes, filters, & a Mod-Matrix.
+Wavetable audio synthesis crate and audio plugin written in rust. supports LFOs, Envelopes, filters, & a Mod-Matrix.
 
-this project is modeled after [Vital](https://vital.audio/)
+This project is modeled after [Vital](https://vital.audio/). It is desined to be used as either a rust crate, or as an audio plugin (VST3 & Clap specifically).
 
 # Project Structure
 
 | **Directory** | **Whats There** |
 |----|----|
-|`wavetable-synth.lib`| the underlying library that can be used as a rust crate and also the backing for the plugin |
-|`wavetable-synth.plugin`| contains the code for the VST3 & Clap plugins as well as the stand alone verison |
+|`./wavetable-synth.lib`| the underlying library that can be used as a rust crate and also the backing for the plugin |
+|`./wavetable-synth.plugin`| contains the code for the VST3 & Clap plugins as well as the stand alone verison |
 
 # Plugin TODOs
 
