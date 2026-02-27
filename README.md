@@ -10,6 +10,7 @@ This project is modeled after [Vital](https://vital.audio/). It is desined to be
 |----|----|
 |`./wavetable-synth.lib`| the underlying library that can be used as a rust crate and also the backing for the plugin |
 |`./wavetable-synth.plugin`| contains the code for the VST3 & Clap plugins as well as the stand alone verison |
+|`./audio-samples`| stores example audio files |
 
 # Plugin TODOs
 

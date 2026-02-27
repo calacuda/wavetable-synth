@@ -2,7 +2,7 @@ _:
   @just -l
 
 build:
-  cargo xtask bundle wt_synth --release -F nih_plug/standalone
+  cargo xtask bundle wt_synth --release -F standalone
 
 install: build
   cp -rf ./target/bundled/Wt\ Synth.vst3 ~/.vst3
