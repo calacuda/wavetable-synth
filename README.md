@@ -4,7 +4,7 @@ Wavetable audio synthesis crate and audio plugin written in rust. supports LFOs,
 
 This project is modeled after [Vital](https://vital.audio/). It is desined to be used as either a rust crate, or as an audio plugin (VST3 & Clap specifically).
 
-# Project Structure
+## Project Structure
 
 | **Directory** | **Whats There** |
 |----|----|
@@ -12,7 +12,9 @@ This project is modeled after [Vital](https://vital.audio/). It is desined to be
 |`./wavetable-synth.plugin`| contains the code for the VST3 & Clap plugins as well as the stand alone verison |
 |`./audio-samples`| stores example audio files |
 
-# Plugin TODOs
+## What is Wavetable Synthesis
+
+## Plugin TODOs
 
 - [ ] mk GUI
   - [ ] enable switching wavetables
@@ -23,7 +25,7 @@ This project is modeled after [Vital](https://vital.audio/). It is desined to be
   - [x] build
   - [x] add release tag
 
-# Lib TODOs
+## Lib TODOs
 
 - [x] enable detune
 - [x] enable mod matrix routing
