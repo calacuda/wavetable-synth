@@ -1,3 +1,5 @@
 # wavetable-synth
 
-Wavetable audio synthesis library written in rust. supports LFOs, filters, & a few effects.
+Wavetable audio synthesis crate written in rust. supports LFOs, Envelopes, filters, & a Mod-Matrix.
+
+
