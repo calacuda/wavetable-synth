@@ -13,6 +13,10 @@ members = ["xtask"]
 [lib]
 crate-type = ["cdylib", "lib"]
 
+[features]
+default = []
+standalone = ["nih_plug/standalone"]
+
 [dependencies]
 biquad = "0.5.0"
 # Remove the `assert_process_allocs` feature to allow allocations on the audio
