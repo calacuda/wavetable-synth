@@ -8,9 +8,7 @@ This project is modeled after [Vital](https://vital.audio/). It is desined to be
 
 https://github.com/user-attachments/assets/9aba5e1f-4ebd-4d82-92ab-b97708481b46
 
-<!-- https://github.com/user-attachments/assets/957e734e-4d97-46eb-b9ed-6a1b9170ad14 /-->
-
-[octave-down-oscilator.wav](https://gabalpha.github.io/read-audio/?p=https://github.com/calacuda/wavetable-synth/blob/main/audio-samples/octave-down-oscilator.wav)
+https://github.com/user-attachments/assets/957e734e-4d97-46eb-b9ed-6a1b9170ad14
 
 ## Project Structure
 
