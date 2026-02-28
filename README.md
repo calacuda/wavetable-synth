@@ -6,9 +6,9 @@ This project is modeled after [Vital](https://vital.audio/). It is desined to be
 
 ## Audio Samples
 
-[default-settings.wav](https://github.com/user-attachments/files/25638308/default-settings.wav)
-
-[octave-down-oscilator.wav](https://github.com/calacuda/wavetable-synth/blob/main/audio-samples/octave-down-oscilator.wav)
+<audio controls>
+  <source src="https://github.com/calacuda/wavetable-synth/blob/main/audio-samples/octave-down-oscilator.wav" type="audio/wav">
+</audio>
 
 ## Project Structure
 
