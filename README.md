@@ -6,7 +6,7 @@ This project is modeled after [Vital](https://vital.audio/). It is desined to be
 
 ## Audio Samples
 
-  NOTE: please unmute the player before starting playback
+> NOTE: please unmute the player before starting playback
 
 https://github.com/user-attachments/assets/9aba5e1f-4ebd-4d82-92ab-b97708481b46
 
