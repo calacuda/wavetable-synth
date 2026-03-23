@@ -114,7 +114,7 @@ impl Voice {
 
     #[cfg(feature = "embeded")]
     pub fn new_2(wave_table: OscWaveTable) -> Self {
-        use crate::synth_common::biquad_filter::BQLowPass;
+        use crate::synth_engines::synth_common::biquad_filter::BQLowPass;
 
         let effects = [
             (EffectsModule::Chorus(Chorus::new()), false),
@@ -123,7 +123,8 @@ impl Voice {
         // let lpf = LowPass::new();
         let mut oscs = [
             (Oscillator::new(wave_table.clone()), true),
-            (Oscillator::new(wave_table.clone()), true),
+            (Oscillator::new(wave_table.clone()), false),
+            (Oscillator::new(wave_table.clone()), false),
         ];
         // oscs[0].1 = true;
         oscs[0].0.level = 0.8;

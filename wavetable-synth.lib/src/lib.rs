@@ -27,6 +27,15 @@ pub type HashMap<Key, Val> = fxhash::FxHashMap<Key, Val>;
 pub const MOD_MATRIX_SIZE: usize = 256;
 #[cfg(feature = "desktop")]
 pub type ModMatrix = [Option<ModMatrixItem>; MOD_MATRIX_SIZE];
+
+#[cfg(feature = "android")]
+pub type HashMap<Key, Val> = fxhash::FxHashMap<Key, Val>;
+// pub type HashSet<T> = FxHashSet<T>;
+#[cfg(feature = "android")]
+pub const MOD_MATRIX_SIZE: usize = 256;
+#[cfg(feature = "android")]
+pub type ModMatrix = [Option<ModMatrixItem>; MOD_MATRIX_SIZE];
+
 #[cfg(feature = "embeded")]
 pub const MOD_MATRIX_SIZE: usize = 8;
 #[cfg(feature = "embeded")]
@@ -50,6 +59,12 @@ pub type LfoWaveTable = Vec<f32, { config::LFO_WAVE_TABLE_SIZE }>;
 pub type OscWaveTable = Vec<f32>;
 
 #[cfg(feature = "desktop")]
+pub type LfoWaveTable = Vec<f32>;
+
+#[cfg(feature = "android")]
+pub type OscWaveTable = Vec<f32>;
+
+#[cfg(feature = "android")]
 pub type LfoWaveTable = Vec<f32>;
 
 pub mod common;

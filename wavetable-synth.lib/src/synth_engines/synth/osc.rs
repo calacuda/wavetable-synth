@@ -5,11 +5,13 @@ use crate::{
     midi_to_freq, pow, tanh, ModulationDest, OscWaveTable, SampleGen,
 };
 use core::fmt::Display;
+#[cfg(feature = "plugin")]
 use nih_plug::prelude::Enum;
 
 pub const N_OVERTONES: usize = 8;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Enum)]
+#[cfg_attr(feature = "plugin", derive(Enum))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OscTarget {
     Filter1,
     Filter2,
